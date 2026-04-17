@@ -1,808 +1,186 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Vaultis</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-/* ============================================================
-   DESIGN SYSTEM — schwarzer Background, konfigurierbare Akzent
-   ============================================================ */
-:root {
-  --bg:        #0a0a0f;
-  --bg2:       #111118;
-  --bg3:       #18181f;
-  --bg4:       #1e1e28;
-  --border:    rgba(255,255,255,0.08);
-  --text:      #f0f0f5;
-  --text2:     #9090a8;
-  --text3:     #5a5a72;
-  --primary:   #7c6af5;
-  --primary-soft: rgba(124,106,245,0.15);
-  --primary-hover: #a89af8;
-  --positive:  #2ecc8f;
-  --positive-soft: rgba(46,204,143,0.12);
-  --negative:  #f0556a;
-  --negative-soft: rgba(240,85,106,0.12);
-  --gold:      #f0c060;
-  --gold-soft: rgba(240,192,96,0.12);
-  --radius:    14px;
-  --radius-sm: 8px;
-}
-
-* { box-sizing: border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
-  min-height: 100vh;
-  overscroll-behavior: none;
-}
-
-/* ── Layout ── */
-.app { max-width:480px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:80px; }
-
-/* ── Screens ── */
-.screen { display:none; padding:20px 16px 0; }
-.screen.active { display:block; }
-
-/* ── Navigation ── */
-.bottom-nav {
-  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
-  width:100%; max-width:480px;
-  background:var(--bg2); border-top:1px solid var(--border);
-  display:flex; padding:8px 0 calc(8px + env(safe-area-inset-bottom));
-  z-index:100;
-}
-.nav-btn {
-  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
-  background:none; border:none; color:var(--text3); cursor:pointer; padding:6px;
-  font-size:10px; font-weight:500; letter-spacing:0.3px;
-  transition: color 0.15s;
-}
-.nav-btn .ico { font-size:20px; line-height:1; }
-.nav-btn.active { color:var(--primary-hover); }
-.nav-btn.fab {
-  background:var(--primary); border-radius:50%; width:48px; height:48px;
-  margin-top:-16px; flex:none; align-self:flex-start; margin-left:auto; margin-right:auto;
-  color:#fff; font-size:22px; box-shadow:0 4px 16px rgba(124,106,245,0.4);
-}
-
-/* ── Cards ── */
-.card {
-  background:var(--bg2); border:1px solid var(--border);
-  border-radius:var(--radius); padding:16px; margin-bottom:12px;
-}
-.card-tight { padding:12px; }
-
-/* ── Hero ── */
-.hero {
-  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
-  border:1px solid var(--border);
-  border-radius:var(--radius); padding:20px; margin-bottom:16px;
-}
-.hero-label { font-size:11px; color:var(--text3); letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:6px; }
-.hero-value { font-size:36px; font-weight:700; letter-spacing:-1px; line-height:1.1; }
-.hero-change { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; padding:4px 8px; border-radius:20px; margin-top:6px; }
-.hero-change.up { background:var(--positive-soft); color:var(--positive); }
-.hero-change.down { background:var(--negative-soft); color:var(--negative); }
-.hero-change.zero { background:var(--bg4); color:var(--text3); }
-.hero-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
-.hero-stat-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:3px; }
-.hero-stat-val { font-size:15px; font-weight:600; }
-.hero-stat-val.pos { color:var(--positive); }
-.hero-stat-val.neg { color:var(--negative); }
-.hero-stat-val.muted { color:var(--text2); }
-
-/* ── Position Rows ── */
-.pos-list { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:12px; }
-.pos-row {
-  display:flex; align-items:center; gap:12px; padding:12px 14px;
-  border-bottom:1px solid var(--border); cursor:pointer;
-  transition: background 0.1s;
-}
-.pos-row:last-child { border-bottom:none; }
-.pos-row:active { background:var(--bg3); }
-.pos-icon { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0; }
-.pos-info { flex:1; min-width:0; }
-.pos-row1 { display:flex; align-items:center; gap:6px; margin-bottom:2px; }
-.pos-ticker { font-size:14px; font-weight:700; }
-.pos-name { font-size:11px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.pos-right { text-align:right; flex-shrink:0; }
-.pos-val { font-size:14px; font-weight:600; }
-.pos-chg { font-size:11px; }
-.pos-chg.up { color:var(--positive); }
-.pos-chg.down { color:var(--negative); }
-.pos-chg.zero { color:var(--text3); }
-
-/* ── Tags ── */
-.tag { font-size:10px; font-weight:600; padding:2px 6px; border-radius:4px; letter-spacing:0.3px; }
-.tag.crypto { background:var(--primary-soft); color:var(--primary-hover); }
-.tag.stock { background:var(--positive-soft); color:var(--positive); }
-.tag.etf { background:var(--gold-soft); color:var(--gold); }
-.tag.metal { background:rgba(209,213,219,0.12); color:#c0c4cc; }
-.tag.warn { background:var(--negative-soft); color:var(--negative); }
-.tag.manual { background:var(--gold-soft); color:var(--gold); }
-.tag.live { background:var(--positive-soft); color:var(--positive); }
-.tag.missing { background:rgba(90,90,114,0.2); color:var(--text3); }
-
-/* ── Banner ── */
-.banner {
-  display:flex; gap:10px; align-items:flex-start; padding:12px;
-  border-radius:var(--radius-sm); margin-bottom:12px;
-  font-size:12px; line-height:1.5;
-}
-.banner.warn { background:var(--negative-soft); border:1px solid rgba(240,85,106,0.2); }
-.banner.info { background:var(--gold-soft); border:1px solid rgba(240,192,96,0.2); }
-.banner.ok { background:var(--positive-soft); border:1px solid rgba(46,204,143,0.2); }
-.banner-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
-.banner-text { flex:1; }
-.banner-title { font-weight:600; margin-bottom:2px; }
-.banner-btn { background:none; border:1px solid currentColor; border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; color:inherit; white-space:nowrap; flex-shrink:0; }
-
-/* ── Forms ── */
-.form-section { margin-bottom:16px; }
-.form-label { font-size:11px; color:var(--text3); margin-bottom:6px; display:block; text-transform:uppercase; letter-spacing:0.4px; }
-.form-input {
-  width:100%; background:var(--bg3); border:1px solid var(--border);
-  border-radius:var(--radius-sm); padding:12px; color:var(--text);
-  font-size:15px; outline:none; transition: border-color 0.15s;
-}
-.form-input:focus { border-color:var(--primary); }
-.form-hint { font-size:11px; color:var(--text3); margin-top:5px; }
-.form-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-
-.type-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
-.type-btn {
-  background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm);
-  padding:12px 8px; color:var(--text2); font-size:12px; font-weight:500;
-  cursor:pointer; text-align:center; transition: all 0.15s;
-}
-.type-btn.active { background:var(--primary-soft); border-color:var(--primary); color:var(--primary-hover); }
-
-.mode-toggle { display:flex; gap:8px; margin-bottom:16px; }
-.mode-btn {
-  flex:1; background:var(--bg3); border:1px solid var(--border);
-  border-radius:var(--radius-sm); padding:10px; color:var(--text2);
-  font-size:12px; font-weight:500; cursor:pointer; text-align:center;
-}
-.mode-btn.active { background:var(--primary-soft); border-color:var(--primary); color:var(--primary-hover); }
-
-/* ── Buttons ── */
-.btn {
-  display:block; width:100%; padding:14px; border-radius:var(--radius-sm);
-  font-size:15px; font-weight:600; border:none; cursor:pointer;
-  text-align:center; transition: opacity 0.15s;
-}
-.btn:active { opacity:0.8; }
-.btn-primary { background:var(--primary); color:#fff; }
-.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text2); }
-.btn-danger { background:var(--negative-soft); color:var(--negative); border:1px solid rgba(240,85,106,0.2); }
-.btn-sm { padding:8px 14px; font-size:13px; width:auto; display:inline-block; }
-
-/* ── Chart ── */
-.chart-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
-.chart-tabs { display:flex; gap:6px; margin-bottom:12px; }
-.chart-tab { flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:6px; font-size:12px; color:var(--text2); cursor:pointer; }
-.chart-tab.active { background:var(--primary-soft); border-color:var(--primary); color:var(--primary-hover); }
-.chart-wrap { height:180px; position:relative; }
-.chart-summary { display:flex; justify-content:space-between; font-size:11px; color:var(--text3); margin-top:10px; }
-
-/* ── Search ── */
-.search-box { position:relative; margin-bottom:12px; }
-.search-input {
-  width:100%; background:var(--bg3); border:1px solid var(--border);
-  border-radius:var(--radius-sm); padding:12px 12px 12px 38px; color:var(--text);
-  font-size:14px; outline:none;
-}
-.search-input:focus { border-color:var(--primary); }
-.search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:16px; pointer-events:none; }
-.filter-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px; scrollbar-width:none; }
-.filter-row::-webkit-scrollbar { display:none; }
-.filter-btn { flex-shrink:0; background:var(--bg3); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; color:var(--text2); cursor:pointer; white-space:nowrap; }
-.filter-btn.active { background:var(--primary-soft); border-color:var(--primary); color:var(--primary-hover); }
-
-/* ── Detail ── */
-.detail-hero { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:12px; }
-.detail-icon-row { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
-.detail-icon { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; flex-shrink:0; }
-.detail-name { font-size:20px; font-weight:700; }
-.detail-sub { font-size:12px; color:var(--text2); margin-top:2px; }
-.detail-price { font-size:32px; font-weight:700; letter-spacing:-1px; margin-top:12px; }
-.meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
-.meta-item-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:3px; }
-.meta-item-val { font-size:14px; font-weight:600; }
-
-/* ── TX Rows ── */
-.tx-row { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border); }
-.tx-row:last-child { border-bottom:none; }
-.tx-date { font-size:11px; color:var(--text3); margin-bottom:2px; }
-.tx-detail { font-size:13px; color:var(--text2); }
-.tx-amount { font-size:14px; font-weight:600; text-align:right; }
-.tx-actions { display:flex; gap:8px; margin-top:3px; justify-content:flex-end; }
-.tx-btn { background:none; border:none; font-size:11px; cursor:pointer; padding:2px 0; }
-.tx-btn.edit { color:var(--primary-hover); }
-.tx-btn.del { color:var(--text3); }
-
-/* ── Alloc Chart ── */
-.alloc-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
-.alloc-wrap { display:flex; gap:16px; align-items:center; }
-.alloc-donut { position:relative; width:110px; height:110px; flex-shrink:0; }
-.alloc-list { flex:1; }
-.alloc-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:12px; }
-.alloc-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.alloc-name { flex:1; color:var(--text2); }
-.alloc-pct { font-weight:600; }
-
-/* ── Empty ── */
-.empty { text-align:center; padding:48px 20px; color:var(--text3); }
-.empty-icon { font-size:40px; margin-bottom:12px; }
-.empty-title { font-size:16px; font-weight:600; color:var(--text2); margin-bottom:6px; }
-.empty-desc { font-size:13px; line-height:1.5; }
-
-/* ── Misc ── */
-.section-title { font-size:14px; font-weight:700; margin-bottom:10px; }
-.live-dot { width:7px; height:7px; background:var(--positive); border-radius:50%; display:inline-block; animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-
-.spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation: spin 0.7s linear infinite; display:inline-block; vertical-align:middle; }
-@keyframes spin { to { transform:rotate(360deg); } }
-
-.toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#1e1e28; border:1px solid var(--border); border-radius:10px; padding:10px 20px; font-size:13px; font-weight:500; z-index:999; opacity:0; transition:opacity 0.25s; pointer-events:none; max-width:320px; text-align:center; }
-.toast.show { opacity:1; }
-
-.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:none; align-items:flex-end; justify-content:center; }
-.modal-overlay.open { display:flex; }
-.modal { background:var(--bg2); border-radius:20px 20px 0 0; padding:20px 20px calc(20px + env(safe-area-inset-bottom)); width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
-.modal-handle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 16px; }
-.modal-title { font-size:17px; font-weight:700; text-align:center; margin-bottom:16px; }
-
-.calc-preview { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; font-size:12px; line-height:1.6; color:var(--text2); margin-bottom:12px; }
-.calc-preview strong { color:var(--text); }
-
-.page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
-.page-title { font-size:22px; font-weight:700; }
-.page-sub { font-size:12px; color:var(--text3); margin-top:2px; }
-.header-btn { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:7px 12px; color:var(--text2); font-size:12px; cursor:pointer; }
-
-.letter-group { margin-bottom:16px; }
-.letter-label { font-size:11px; font-weight:700; color:var(--primary-hover); letter-spacing:1px; padding:4px 0 8px; }
-
-.edit-bar { background:var(--primary-soft); border:1px solid var(--primary); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
-.edit-bar-label { font-size:12px; color:var(--primary-hover); font-weight:500; }
-.edit-bar-cancel { background:none; border:none; color:var(--text2); font-size:12px; cursor:pointer; }
-
-.factsheet { background:var(--bg3); border-radius:var(--radius-sm); padding:12px; font-size:12px; line-height:1.7; color:var(--text2); margin-bottom:10px; }
-.factsheet strong { color:var(--text); }
-
-.kv { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:12px; }
-.kv-label { color:var(--text3); }
-.kv-val { font-weight:500; }
-
-.section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-.greeting { font-size:22px; font-weight:700; margin-bottom:2px; }
-.greeting-sub { font-size:12px; color:var(--text3); margin-bottom:20px; }
-
-/* ── Settings ── */
-.setting-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border); }
-.setting-row:last-child { border-bottom:none; }
-.setting-label { font-size:14px; }
-.setting-sub { font-size:11px; color:var(--text3); margin-top:2px; }
-select.form-input { appearance:none; }
-</style>
-</head>
-<body>
-<div class="app">
-
-  <!-- SCREENS -->
-
-  <!-- HOME / DASHBOARD -->
-  <div class="screen active" id="screen-home">
-    <div class="greeting" id="greeting">Guten Morgen</div>
-    <div class="greeting-sub" id="greeting-sub">Portfolio-Übersicht</div>
-
-    <!-- Hero -->
-    <div class="hero">
-      <div class="hero-label"><span class="live-dot"></span> Portfoliowert</div>
-      <div class="hero-value" id="hero-val">CHF 0</div>
-      <div class="hero-change zero" id="hero-ret">— 0.00%</div>
-      <div class="hero-stats">
-        <div>
-          <div class="hero-stat-label">Investiert</div>
-          <div class="hero-stat-val muted" id="hero-inv">CHF 0</div>
-        </div>
-        <div>
-          <div class="hero-stat-label">Gewinn / Verlust</div>
-          <div class="hero-stat-val" id="hero-pnl">CHF 0</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:1px;" id="hero-pnl-pct">—</div>
-        </div>
-        <div>
-          <div class="hero-stat-label">Heute</div>
-          <div class="hero-stat-val" id="hero-day">CHF 0</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:1px;" id="hero-day-pct">—</div>
-        </div>
-        <div>
-          <div class="hero-stat-label">Datenqualität</div>
-          <div class="hero-stat-val muted" style="font-size:12px;" id="hero-quality">—</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Error Banner -->
-    <div id="home-banner"></div>
-
-    <!-- Alloc Chart -->
-    <div class="alloc-card" id="alloc-card" style="display:none;">
-      <div class="section-head">
-        <div class="section-title">Allokation</div>
-      </div>
-      <div class="alloc-wrap">
-        <div class="alloc-donut"><canvas id="alloc-chart"></canvas></div>
-        <div class="alloc-list" id="alloc-list"></div>
-      </div>
-    </div>
-
-    <!-- Top Positions -->
-    <div class="section-head">
-      <div class="section-title">Positionen</div>
-      <button class="header-btn" onclick="showScreen('portfolio')">Alle</button>
-    </div>
-    <div id="home-positions">
-      <div class="empty">
-        <div class="empty-icon">◈</div>
-        <div class="empty-title">Noch keine Positionen</div>
-        <div class="empty-desc">Tippe auf + um deine erste Position hinzuzufügen.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PORTFOLIO -->
-  <div class="screen" id="screen-portfolio">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Portfolio</div>
-        <div class="page-sub" id="ptf-sub">—</div>
-      </div>
-      <button class="header-btn" onclick="refreshPrices()">↻ Aktualisieren</button>
-    </div>
-
-    <div class="filter-row" id="ptf-filter">
-      <button class="filter-btn active" data-f="all" onclick="setPortfolioFilter('all',this)">Alle</button>
-      <button class="filter-btn" data-f="crypto" onclick="setPortfolioFilter('crypto',this)">Crypto</button>
-      <button class="filter-btn" data-f="stock" onclick="setPortfolioFilter('stock',this)">Aktien</button>
-      <button class="filter-btn" data-f="etf" onclick="setPortfolioFilter('etf',this)">ETFs</button>
-      <button class="filter-btn" data-f="metal" onclick="setPortfolioFilter('metal',this)">Metalle</button>
-    </div>
-
-    <div id="ptf-list"></div>
-  </div>
-
-  <!-- ADD / EDIT -->
-  <div class="screen" id="screen-add">
-    <div class="page-header">
-      <div class="page-title" id="add-title">Position hinzufügen</div>
-    </div>
-
-    <div id="edit-bar" style="display:none;" class="edit-bar">
-      <div class="edit-bar-label">✎ Transaktion bearbeiten</div>
-      <button class="edit-bar-cancel" onclick="cancelEdit()">Abbrechen</button>
-    </div>
-
-    <!-- Asset Type -->
-    <div class="form-section">
-      <label class="form-label">Asset-Typ</label>
-      <div class="type-grid">
-        <button class="type-btn active" id="tbtn-crypto" onclick="setAddType('crypto')">₿ Krypto</button>
-        <button class="type-btn" id="tbtn-stock" onclick="setAddType('stock')">▲ Aktie</button>
-        <button class="type-btn" id="tbtn-etf" onclick="setAddType('etf')">◈ ETF</button>
-        <button class="type-btn" id="tbtn-metal" onclick="setAddType('metal')">◭ Metall</button>
-      </div>
-    </div>
-
-    <!-- Asset Search -->
-    <div class="form-section">
-      <label class="form-label">Asset</label>
-      <div class="search-box" style="margin:0;">
-        <span class="search-icon">⌕</span>
-        <input class="search-input" id="add-asset-input" placeholder="Name oder Symbol suchen…"
-          oninput="onAddAssetSearch()" onblur="hideAddResults()" autocomplete="off">
-      </div>
-      <div id="add-asset-results" style="background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); margin-top:4px; display:none; max-height:220px; overflow-y:auto;"></div>
-      <div id="add-asset-selected" style="margin-top:8px; display:none;">
-        <div style="display:flex; align-items:center; gap:10px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px;">
-          <div id="add-asset-icon" class="pos-icon" style="width:34px;height:34px;font-size:14px;"></div>
-          <div style="flex:1;">
-            <div id="add-asset-name" style="font-size:14px; font-weight:600;"></div>
-            <div id="add-asset-sym" style="font-size:11px; color:var(--text3);"></div>
-          </div>
-          <button onclick="clearAddAsset()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;">×</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mode -->
-    <div class="form-section">
-      <label class="form-label">Kaufmodus</label>
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="mbtn-units" onclick="setAddMode('units')">Stückzahl &amp; Preis</button>
-        <button class="mode-btn" id="mbtn-amount" onclick="setAddMode('amount')">Investierter Betrag</button>
-      </div>
-    </div>
-
-    <!-- Date + Currency -->
-    <div class="form-section">
-      <div class="form-row2">
-        <div>
-          <label class="form-label">Kaufdatum</label>
-          <input class="form-input" type="date" id="add-date">
-        </div>
-        <div>
-          <label class="form-label">Währung</label>
-          <select class="form-input" id="add-currency">
-            <option>CHF</option><option>USD</option><option>EUR</option><option>GBP</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Units Mode Fields -->
-    <div id="fields-units">
-      <div class="form-section">
-        <div class="form-row2">
-          <div>
-            <label class="form-label">Stückzahl / Units</label>
-            <input class="form-input" type="number" id="add-qty" step="any" placeholder="0.00" inputmode="decimal">
-          </div>
-          <div>
-            <label class="form-label">Preis pro Einheit</label>
-            <input class="form-input" type="number" id="add-price" step="any" placeholder="0.00" inputmode="decimal">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Amount Mode Fields -->
-    <div id="fields-amount" style="display:none;">
-      <div class="form-section">
-        <label class="form-label">Investierter Betrag</label>
-        <input class="form-input" type="number" id="add-amount" step="any" placeholder="0.00" inputmode="decimal" oninput="onAmountInput()">
-      </div>
-      <div class="form-section">
-        <label class="form-label">Historischer Kurs am Kaufdatum</label>
-        <input class="form-input" type="number" id="add-histprice" step="any" placeholder="Automatisch laden oder manuell eingeben" inputmode="decimal" oninput="onAmountInput()">
-        <div class="form-hint" id="add-histprice-hint">Wird automatisch geladen wenn du speicherst.</div>
-      </div>
-      <div id="add-calc-preview" style="display:none;" class="calc-preview"></div>
-    </div>
-
-    <!-- Fees + Notes -->
-    <div class="form-section">
-      <div class="form-row2">
-        <div>
-          <label class="form-label">Gebühren</label>
-          <input class="form-input" type="number" id="add-fees" step="any" placeholder="0.00" inputmode="decimal">
-        </div>
-        <div>
-          <label class="form-label">Notiz (optional)</label>
-          <input class="form-input" type="text" id="add-notes" placeholder="z.B. Sparplan">
-        </div>
-      </div>
-    </div>
-
-    <button class="btn btn-primary" id="add-save-btn" onclick="saveTransaction()">Position speichern</button>
-    <div style="height:8px;"></div>
-    <button class="btn btn-ghost" onclick="showScreen('home')">Abbrechen</button>
-  </div>
-
-  <!-- MARKETS -->
-  <div class="screen" id="screen-markets">
-    <div class="page-header">
-      <div>
-        <div class="page-title">Markets</div>
-        <div class="page-sub" id="markets-count">Alle Assets</div>
-      </div>
-    </div>
-
-    <div class="search-box">
-      <span class="search-icon">⌕</span>
-      <input class="search-input" id="markets-input" placeholder="Name, Ticker, Beschreibung…" oninput="renderMarkets()">
-    </div>
-    <div class="filter-row">
-      <button class="filter-btn active" data-mf="all" onclick="setMarketFilter('all',this)">Alle</button>
-      <button class="filter-btn" data-mf="crypto" onclick="setMarketFilter('crypto',this)">Crypto</button>
-      <button class="filter-btn" data-mf="stock" onclick="setMarketFilter('stock',this)">Aktien</button>
-      <button class="filter-btn" data-mf="etf" onclick="setMarketFilter('etf',this)">ETFs</button>
-      <button class="filter-btn" data-mf="metal" onclick="setMarketFilter('metal',this)">Metalle</button>
-    </div>
-    <div id="markets-list"></div>
-  </div>
-
-  <!-- DETAIL -->
-  <div class="screen" id="screen-detail">
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-      <button onclick="goBack()" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text2);cursor:pointer;font-size:13px;">← Zurück</button>
-    </div>
-    <div id="detail-content"></div>
-  </div>
-
-  <!-- SETTINGS -->
-  <div class="screen" id="screen-settings">
-    <div class="page-title" style="margin-bottom:20px;">Einstellungen</div>
-
-    <div class="card">
-      <div class="section-title" style="margin-bottom:12px;">Darstellung</div>
-      <div class="setting-row">
-        <div><div class="setting-label">Währung</div></div>
-        <select class="form-input" style="width:auto;" id="set-currency" onchange="changeCurrency(this.value)">
-          <option value="CHF">CHF</option>
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-        </select>
-      </div>
-      <div class="setting-row">
-        <div><div class="setting-label">Akzentfarbe</div></div>
-        <input type="color" id="set-color" value="#7c6af5" onchange="changeAccent(this.value)" style="width:36px;height:28px;border:none;background:none;cursor:pointer;">
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:12px;">
-      <div class="section-title" style="margin-bottom:12px;">Backend API</div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">API Base URL</div>
-          <div class="setting-sub">Dein Vercel-Deployment</div>
-        </div>
-      </div>
-      <input class="form-input" id="set-api" placeholder="https://vaultis-api.vercel.app" oninput="saveApiBase(this.value)" style="margin-top:8px;">
-      <div class="form-hint" id="set-api-status" style="margin-top:6px;"></div>
-    </div>
-
-    <div class="card" style="margin-top:12px;">
-      <div class="section-title" style="margin-bottom:12px;">Daten</div>
-      <button class="btn btn-danger" onclick="confirmClearAll()" style="margin-top:4px;">Alle Daten löschen</button>
-    </div>
-
-    <div style="text-align:center; padding:20px; font-size:11px; color:var(--text3);">
-      Vaultis v3 · Daten werden nur lokal gespeichert
-    </div>
-  </div>
-
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
-    <button class="nav-btn active" data-s="home" onclick="showScreen('home')">
-      <span class="ico">⌂</span><span>Home</span>
-    </button>
-    <button class="nav-btn" data-s="portfolio" onclick="showScreen('portfolio')">
-      <span class="ico">◈</span><span>Portfolio</span>
-    </button>
-    <button class="nav-btn fab" onclick="showScreen('add')">
-      <span class="ico">+</span>
-    </button>
-    <button class="nav-btn" data-s="markets" onclick="showScreen('markets')">
-      <span class="ico">⌕</span><span>Markets</span>
-    </button>
-    <button class="nav-btn" data-s="settings" onclick="showScreen('settings')">
-      <span class="ico">◌</span><span>Mehr</span>
-    </button>
-  </nav>
-
-</div>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal" id="modal-body"></div>
-</div>
-
-<div class="toast" id="toast"></div>
-
 <script>
 'use strict';
+
 // ============================================================
-// VAULTIS v3 — Complete MVP
-// ============================================================
-// Architecture:
-//   - All market data fetched from backend API (no direct browser calls to Yahoo etc.)
-//   - Backend URL configurable in settings
-//   - Single source of truth: transactions[] + manualPrices{} + priceCache{}
-//   - All portfolio calculations run from these states
+// VAULTIS v3 — fixed script block
 // ============================================================
 
-// ── CONFIG ──────────────────────────────────────────────────
-// Fallback auf bekannte Vercel-URL wenn nichts gespeichert ist
 const API_BASE_DEFAULT = 'https://project-wtf8r.vercel.app';
 let API_BASE = localStorage.getItem('vaultis_api_base') || API_BASE_DEFAULT;
 
-// file:// Warnung — CORS funktioniert bei file:// nicht zuverlässig.
-// Lösung: HTML über einen lokalen Server öffnen (npx serve .) oder auf Vercel deployen.
-if (location.protocol === 'file:') {
-  console.warn('[Vaultis] file:// erkannt. CORS-Requests können blockiert werden. Starte die App mit: npx serve . oder deploye auf Vercel.');
-}
 const STORAGE = {
-  TXNS:    'vaultis3_txns',
-  MANUAL:  'vaultis3_manual',
-  PCACHE:  'vaultis3_pcache',
-  HCACHE:  'vaultis3_hcache',
-  SETTINGS:'vaultis3_settings',
+  TXNS: 'vaultis3_txns',
+  MANUAL: 'vaultis3_manual',
+  PCACHE: 'vaultis3_pcache',
+  HCACHE: 'vaultis3_hcache',
+  SETTINGS: 'vaultis3_settings',
 };
 
-// ── STATE ───────────────────────────────────────────────────
-let transactions = [];   // [{id, assetId, type, mode:'units'|'amount', date, currency, units, unitPrice, investedAmount, unitPriceAtPurchase, calculatedUnits, fees, notes}]
-let manualPrices = {};   // {assetId: {price, currency, setAt}}
-let priceCache   = {};   // {assetId: {price, change24h, currency, source, fetchedAt}}
-let histCache    = {};   // {'id_date_cur': price}
-let settings     = { currency:'CHF' };
+let transactions = [];
+let manualPrices = {};
+let priceCache = {};
+let histCache = {};
+let settings = { currency: 'CHF' };
 let portfolioFilter = 'all';
-let marketFilter    = 'all';
-let addType  = 'crypto';
-let addMode  = 'units';
+let marketFilter = 'all';
+let addType = 'crypto';
+let addMode = 'units';
 let addAsset = null;
 let editingId = null;
-let detailAsset = null;  // {id, type}
-let prevScreen  = 'home';
-let allocChart  = null;
+let detailAsset = null;
+let prevScreen = 'home';
+let currentScreen = 'home';
+let allocChart = null;
 let detailChart = null;
+let addSearchTimeout = null;
+let addAssetResults = [];
+let toastTimer = null;
 
-// ── ASSET CATALOG ────────────────────────────────────────────
 const CATALOG = {
+  crypto: [
+    {id:'bitcoin',sym:'BTC',name:'Bitcoin',icon:'₿',color:'#f7931a',bg:'rgba(247,147,26,0.15)',cat:'Layer 1',desc:'Das Original. Dezentrale digitale Währung, begrenzt auf 21 Mio. BTC.'},
+    {id:'ethereum',sym:'ETH',name:'Ethereum',icon:'Ξ',color:'#627eea',bg:'rgba(98,126,234,0.15)',cat:'Layer 1',desc:'Programmierbares Blockchain-Protokoll mit Smart Contracts.'},
+    {id:'solana',sym:'SOL',name:'Solana',icon:'◎',color:'#9945ff',bg:'rgba(153,69,255,0.15)',cat:'Layer 1',desc:'Hochdurchsatz-Blockchain mit Proof-of-History.'},
+    {id:'ripple',sym:'XRP',name:'XRP',icon:'✕',color:'#346aa9',bg:'rgba(52,106,169,0.15)',cat:'Payments',desc:'Zahlungsnetzwerk für schnelle, günstige internationale Überweisungen.'},
+    {id:'cardano',sym:'ADA',name:'Cardano',icon:'⚙',color:'#0033ad',bg:'rgba(0,51,173,0.15)',cat:'Layer 1',desc:'Wissenschaftlich fundierte Blockchain-Plattform.'},
+    {id:'binancecoin',sym:'BNB',name:'BNB',icon:'B',color:'#f3ba2f',bg:'rgba(243,186,47,0.15)',cat:'Exchange',desc:'Native Token der Binance-Ökosystems und BNB Chain.'},
+    {id:'dogecoin',sym:'DOGE',name:'Dogecoin',icon:'Ð',color:'#c2a633',bg:'rgba(194,166,51,0.15)',cat:'Meme',desc:'Meme-Coin, entstanden 2013 aus einem Internet-Witz.'},
+    {id:'avalanche-2',sym:'AVAX',name:'Avalanche',icon:'A',color:'#e84142',bg:'rgba(232,65,66,0.15)',cat:'Layer 1',desc:'Hochskalierbare Blockchain-Plattform mit Subnetz-Architektur.'},
+    {id:'chainlink',sym:'LINK',name:'Chainlink',icon:'⬡',color:'#375bd2',bg:'rgba(55,91,210,0.15)',cat:'Oracle',desc:'Dezentrales Oracle-Netzwerk für Smart Contracts.'},
+    {id:'polkadot',sym:'DOT',name:'Polkadot',icon:'◉',color:'#e6007a',bg:'rgba(230,0,122,0.15)',cat:'Layer 0',desc:'Multi-Chain-Protokoll das verschiedene Blockchains verbindet.'},
+    {id:'litecoin',sym:'LTC',name:'Litecoin',icon:'Ł',color:'#bfbbbb',bg:'rgba(191,187,187,0.15)',cat:'Payments',desc:'Einer der ältesten Altcoins, schnellere Transaktionen als BTC.'},
+    {id:'uniswap',sym:'UNI',name:'Uniswap',icon:'🦄',color:'#ff007a',bg:'rgba(255,0,122,0.15)',cat:'DeFi/DEX',desc:'Grösster dezentraler Exchange auf Ethereum.'},
+    {id:'aave',sym:'AAVE',name:'Aave',icon:'A',color:'#b6509e',bg:'rgba(182,80,158,0.15)',cat:'DeFi',desc:'Dezentrales Kredit- und Leihprotokoll.'},
+    {id:'the-open-network',sym:'TON',name:'Toncoin',icon:'◆',color:'#0088cc',bg:'rgba(0,136,204,0.15)',cat:'Layer 1',desc:'Blockchain des Telegram-Ökosystems.'},
+    {id:'sui',sym:'SUI',name:'Sui',icon:'◈',color:'#4da2ff',bg:'rgba(77,162,255,0.15)',cat:'Layer 1',desc:'Move-basierte Blockchain mit paralleler Transaktionsverarbeitung.'},
+    {id:'near',sym:'NEAR',name:'NEAR Protocol',icon:'N',color:'#00c08b',bg:'rgba(0,192,139,0.15)',cat:'Layer 1',desc:'Sharded Proof-of-Stake Blockchain mit einfacher Entwicklung.'},
+    {id:'arbitrum',sym:'ARB',name:'Arbitrum',icon:'△',color:'#28a0f0',bg:'rgba(40,160,240,0.15)',cat:'Layer 2',desc:'Optimistic Rollup Layer-2 auf Ethereum.'},
+    {id:'injective-protocol',sym:'INJ',name:'Injective',icon:'I',color:'#0082fa',bg:'rgba(0,130,250,0.15)',cat:'DeFi',desc:'Dezentrales DeFi-Protokoll für Trading.'},
+    {id:'render-token',sym:'RENDER',name:'Render Network',icon:'R',color:'#e30052',bg:'rgba(227,0,82,0.15)',cat:'AI/GPU',desc:'Dezentrales GPU-Rendering-Netzwerk.'},
+    {id:'pepe',sym:'PEPE',name:'Pepe',icon:'🐸',color:'#00a852',bg:'rgba(0,168,82,0.15)',cat:'Meme',desc:'Meme-Coin basierend auf dem Pepe-the-Frog-Internet-Meme.'},
+    {id:'shiba-inu',sym:'SHIB',name:'Shiba Inu',icon:'🐕',color:'#ffa409',bg:'rgba(255,164,9,0.15)',cat:'Meme',desc:'Ethereum-basierter Meme-Coin, selbsternannter DOGE-Killer.'},
+    {id:'maker',sym:'MKR',name:'MakerDAO',icon:'M',color:'#1aab9b',bg:'rgba(26,171,155,0.15)',cat:'DeFi',desc:'Governance-Token des DAI-Stablecoin-Protokolls.'},
+    {id:'tron',sym:'TRX',name:'TRON',icon:'T',color:'#ff0013',bg:'rgba(255,0,19,0.15)',cat:'Layer 1',desc:'Dezentralisierte Blockchain-Plattform für Content-Sharing.'},
+    {id:'aptos',sym:'APT',name:'Aptos',icon:'▲',color:'#00b2ff',bg:'rgba(0,178,255,0.15)',cat:'Layer 1',desc:'Move-basierte Layer-1-Blockchain aus Meta-Forschung entstanden.'},
+    {id:'optimism',sym:'OP',name:'Optimism',icon:'○',color:'#ff0420',bg:'rgba(255,4,32,0.15)',cat:'Layer 2',desc:'Optimistic Rollup Layer-2 Skalierungslösung auf Ethereum.'},
+    {id:'celestia',sym:'TIA',name:'Celestia',icon:'◌',color:'#7b2bf9',bg:'rgba(123,43,249,0.15)',cat:'Modular',desc:'Modulares Datenverfügbarkeits-Netzwerk.'},
+    {id:'sei-network',sym:'SEI',name:'Sei',icon:'S',color:'#9d1ef9',bg:'rgba(157,30,249,0.15)',cat:'Layer 1',desc:'Auf Trading optimierte Layer-1-Blockchain.'},
+    {id:'fetch-ai',sym:'FET',name:'Fetch.ai',icon:'F',color:'#1a1a2e',bg:'rgba(100,100,200,0.15)',cat:'AI',desc:'Dezentrales Machine-Learning-Netzwerk.'},
+    {id:'kaspa',sym:'KAS',name:'Kaspa',icon:'K',color:'#49dbc0',bg:'rgba(73,219,192,0.15)',cat:'Layer 1',desc:'Blockdag-Protokoll für schnelle parallele Blocks.'},
+  ],
 
-crypto: [
-  {id:'bitcoin',      sym:'BTC',  name:'Bitcoin',           icon:'₿',  color:'#f7931a', bg:'rgba(247,147,26,0.15)',  cat:'Layer 1',   desc:'Das Original. Dezentrale digitale Währung, begrenzt auf 21 Mio. BTC.'},
-  {id:'ethereum',     sym:'ETH',  name:'Ethereum',          icon:'Ξ',  color:'#627eea', bg:'rgba(98,126,234,0.15)',  cat:'Layer 1',   desc:'Programmierbares Blockchain-Protokoll mit Smart Contracts.'},
-  {id:'solana',       sym:'SOL',  name:'Solana',            icon:'◎',  color:'#9945ff', bg:'rgba(153,69,255,0.15)', cat:'Layer 1',   desc:'Hochdurchsatz-Blockchain mit Proof-of-History.'},
-  {id:'ripple',       sym:'XRP',  name:'XRP',               icon:'✕',  color:'#346aa9', bg:'rgba(52,106,169,0.15)', cat:'Payments',  desc:'Zahlungsnetzwerk für schnelle, günstige internationale Überweisungen.'},
-  {id:'cardano',      sym:'ADA',  name:'Cardano',           icon:'⚙',  color:'#0033ad', bg:'rgba(0,51,173,0.15)',   cat:'Layer 1',   desc:'Wissenschaftlich fundierte Blockchain-Plattform.'},
-  {id:'binancecoin',  sym:'BNB',  name:'BNB',               icon:'B',  color:'#f3ba2f', bg:'rgba(243,186,47,0.15)', cat:'Exchange',  desc:'Native Token der Binance-Ökosystems und BNB Chain.'},
-  {id:'dogecoin',     sym:'DOGE', name:'Dogecoin',          icon:'Ð',  color:'#c2a633', bg:'rgba(194,166,51,0.15)', cat:'Meme',      desc:'Meme-Coin, entstanden 2013 aus einem Internet-Witz.'},
-  {id:'avalanche-2',  sym:'AVAX', name:'Avalanche',         icon:'A',  color:'#e84142', bg:'rgba(232,65,66,0.15)',  cat:'Layer 1',   desc:'Hochskalierbare Blockchain-Plattform mit Subnetz-Architektur.'},
-  {id:'chainlink',    sym:'LINK', name:'Chainlink',         icon:'⬡',  color:'#375bd2', bg:'rgba(55,91,210,0.15)',  cat:'Oracle',    desc:'Dezentrales Oracle-Netzwerk für Smart Contracts.'},
-  {id:'polkadot',     sym:'DOT',  name:'Polkadot',          icon:'◉',  color:'#e6007a', bg:'rgba(230,0,122,0.15)',  cat:'Layer 0',   desc:'Multi-Chain-Protokoll das verschiedene Blockchains verbindet.'},
-  {id:'litecoin',     sym:'LTC',  name:'Litecoin',          icon:'Ł',  color:'#bfbbbb', bg:'rgba(191,187,187,0.15)',cat:'Payments',  desc:'Einer der ältesten Altcoins, schnellere Transaktionen als BTC.'},
-  {id:'uniswap',      sym:'UNI',  name:'Uniswap',           icon:'🦄', color:'#ff007a', bg:'rgba(255,0,122,0.15)',  cat:'DeFi/DEX',  desc:'Grösster dezentraler Exchange auf Ethereum.'},
-  {id:'aave',         sym:'AAVE', name:'Aave',              icon:'A',  color:'#b6509e', bg:'rgba(182,80,158,0.15)', cat:'DeFi',      desc:'Dezentrales Kredit- und Leihprotokoll.'},
-  {id:'the-open-network',sym:'TON',name:'Toncoin',          icon:'◆',  color:'#0088cc', bg:'rgba(0,136,204,0.15)', cat:'Layer 1',   desc:'Blockchain des Telegram-Ökosystems.'},
-  {id:'sui',          sym:'SUI',  name:'Sui',               icon:'◈',  color:'#4da2ff', bg:'rgba(77,162,255,0.15)', cat:'Layer 1',   desc:'Move-basierte Blockchain mit paralleler Transaktionsverarbeitung.'},
-  {id:'near',         sym:'NEAR', name:'NEAR Protocol',     icon:'N',  color:'#00c08b', bg:'rgba(0,192,139,0.15)', cat:'Layer 1',   desc:'Sharded Proof-of-Stake Blockchain mit einfacher Entwicklung.'},
-  {id:'arbitrum',     sym:'ARB',  name:'Arbitrum',          icon:'△',  color:'#28a0f0', bg:'rgba(40,160,240,0.15)', cat:'Layer 2',   desc:'Optimistic Rollup Layer-2 auf Ethereum.'},
-  {id:'injective-protocol',sym:'INJ',name:'Injective',      icon:'I',  color:'#0082fa', bg:'rgba(0,130,250,0.15)', cat:'DeFi',      desc:'Dezentrales DeFi-Protokoll für Trading.'},
-  {id:'render-token', sym:'RENDER',name:'Render Network',   icon:'R',  color:'#e30052', bg:'rgba(227,0,82,0.15)',   cat:'AI/GPU',    desc:'Dezentrales GPU-Rendering-Netzwerk.'},
-  {id:'pepe',         sym:'PEPE', name:'Pepe',              icon:'🐸', color:'#00a852', bg:'rgba(0,168,82,0.15)',   cat:'Meme',      desc:'Meme-Coin basierend auf dem Pepe-the-Frog-Internet-Meme.'},
-  {id:'shiba-inu',    sym:'SHIB', name:'Shiba Inu',         icon:'🐕', color:'#ffa409', bg:'rgba(255,164,9,0.15)',  cat:'Meme',      desc:'Ethereum-basierter Meme-Coin, selbsternannter DOGE-Killer.'},
-  {id:'maker',        sym:'MKR',  name:'MakerDAO',          icon:'M',  color:'#1aab9b', bg:'rgba(26,171,155,0.15)', cat:'DeFi',      desc:'Governance-Token des DAI-Stablecoin-Protokolls.'},
-  {id:'tron',         sym:'TRX',  name:'TRON',              icon:'T',  color:'#ff0013', bg:'rgba(255,0,19,0.15)',   cat:'Layer 1',   desc:'Dezentralisierte Blockchain-Plattform für Content-Sharing.'},
-  {id:'aptos',        sym:'APT',  name:'Aptos',             icon:'▲',  color:'#00b2ff', bg:'rgba(0,178,255,0.15)', cat:'Layer 1',   desc:'Move-basierte Layer-1-Blockchain aus Meta-Forschung entstanden.'},
-  {id:'optimism',     sym:'OP',   name:'Optimism',          icon:'○',  color:'#ff0420', bg:'rgba(255,4,32,0.15)',   cat:'Layer 2',   desc:'Optimistic Rollup Layer-2 Skalierungslösung auf Ethereum.'},
-  {id:'celestia',     sym:'TIA',  name:'Celestia',          icon:'◌',  color:'#7b2bf9', bg:'rgba(123,43,249,0.15)', cat:'Modular',   desc:'Modulares Datenverfügbarkeits-Netzwerk.'},
-  {id:'sei-network',  sym:'SEI',  name:'Sei',               icon:'S',  color:'#9d1ef9', bg:'rgba(157,30,249,0.15)', cat:'Layer 1',   desc:'Auf Trading optimierte Layer-1-Blockchain.'},
-  {id:'fetch-ai',     sym:'FET',  name:'Fetch.ai',          icon:'F',  color:'#1a1a2e', bg:'rgba(100,100,200,0.15)',cat:'AI',        desc:'Dezentrales Machine-Learning-Netzwerk.'},
-  {id:'polkadot',     sym:'DOT',  name:'Polkadot',          icon:'●',  color:'#e6007a', bg:'rgba(230,0,122,0.15)',  cat:'Layer 0',   desc:'Parachain-Netzwerk.'},
-  {id:'kaspa',        sym:'KAS',  name:'Kaspa',             icon:'K',  color:'#49dbc0', bg:'rgba(73,219,192,0.15)', cat:'Layer 1',   desc:'Blockdag-Protokoll für schnelle parallele Blocks.'},
-],
+  etf: [
+    {id:'VWRL',sym:'VWRL',name:'Vanguard FTSE All-World ETF',icon:'V',color:'#941b2f',bg:'rgba(148,27,47,0.15)',provider:'Vanguard',isin:'IE00B3RBWM25',ter:'0.22%',dist:'Ausschüttend',desc:'Weltaktien — FTSE All-World Index, ~3900 Unternehmen.'},
+    {id:'IWDA',sym:'IWDA',name:'iShares Core MSCI World ETF',icon:'I',color:'#009b77',bg:'rgba(0,155,119,0.15)',provider:'iShares',isin:'IE00B4L5Y983',ter:'0.20%',dist:'Thesaurierend',desc:'MSCI World — 1500+ Unternehmen aus 23 Industrieländern.'},
+    {id:'CSPX',sym:'CSPX',name:'iShares Core S&P 500 ETF',icon:'I',color:'#009b77',bg:'rgba(0,155,119,0.15)',provider:'iShares',isin:'IE00B5BMR087',ter:'0.07%',dist:'Thesaurierend',desc:'S&P 500 — 500 grösste US-Unternehmen.'},
+    {id:'EQQQ',sym:'EQQQ',name:'Invesco NASDAQ-100 ETF',icon:'Q',color:'#0061a8',bg:'rgba(0,97,168,0.15)',provider:'Invesco',isin:'IE0032077012',ter:'0.30%',dist:'Thesaurierend',desc:'NASDAQ-100 — 100 grösste Nicht-Finanzunternehmen der NASDAQ.'},
+    {id:'VUSA',sym:'VUSA',name:'Vanguard S&P 500 ETF',icon:'V',color:'#941b2f',bg:'rgba(148,27,47,0.15)',provider:'Vanguard',isin:'IE00B3XXRP09',ter:'0.07%',dist:'Ausschüttend',desc:'S&P 500 ETF mit niedrigen Kosten von Vanguard.'},
+    {id:'XDWD',sym:'XDWD',name:'Xtrackers MSCI World Swap ETF',icon:'X',color:'#FFB300',bg:'rgba(255,179,0,0.15)',provider:'Xtrackers',isin:'IE00BJ0KDQ92',ter:'0.19%',dist:'Thesaurierend',desc:'Synthetischer MSCI World via Total Return Swap.'},
+    {id:'EUNL',sym:'EUNL',name:'iShares Core MSCI World ETF (EUR)',icon:'I',color:'#009b77',bg:'rgba(0,155,119,0.15)',provider:'iShares',isin:'IE00B4L5Y983',ter:'0.20%',dist:'Thesaurierend',desc:'MSCI World, an Euronext Amsterdam gelistet.'},
+    {id:'SSAC',sym:'SSAC',name:'iShares MSCI ACWI ETF',icon:'I',color:'#009b77',bg:'rgba(0,155,119,0.15)',provider:'iShares',isin:'IE00B6R52259',ter:'0.20%',dist:'Thesaurierend',desc:'MSCI ACWI — Welt inkl. Schwellenländer.'},
+    {id:'VWCE',sym:'VWCE',name:'Vanguard FTSE All-World ETF (Acc)',icon:'V',color:'#941b2f',bg:'rgba(148,27,47,0.15)',provider:'Vanguard',isin:'IE00BK5BQT80',ter:'0.22%',dist:'Thesaurierend',desc:'Thesaurierende Version des VWRL.'},
+    {id:'SMEA',sym:'SMEA',name:'iShares STOXX Europe 600 ETF',icon:'I',color:'#009b77',bg:'rgba(0,155,119,0.15)',provider:'iShares',isin:'IE00B3ZW0K18',ter:'0.20%',dist:'Thesaurierend',desc:'Europa-Aktien — STOXX Europe 600 Index.'},
+    {id:'LYPS',sym:'LYPS',name:'Lyxor S&P 500 ETF',icon:'L',color:'#00205b',bg:'rgba(0,32,91,0.15)',provider:'Lyxor',isin:'LU0496786574',ter:'0.09%',dist:'Thesaurierend',desc:'S&P 500 via Lyxor (jetzt Amundi).'},
+    {id:'URTH',sym:'URTH',name:'iShares MSCI World ETF (USD)',icon:'I',color:'#009b77',bg:'rgba(0,155,119,0.15)',provider:'iShares',isin:'US46432F3733',ter:'0.24%',dist:'Ausschüttend',desc:'MSCI World in USD auf NYSE Arca.'},
+    {id:'QQQ',sym:'QQQ',name:'Invesco QQQ Trust',icon:'Q',color:'#0061a8',bg:'rgba(0,97,168,0.15)',provider:'Invesco',isin:'US46090E1038',ter:'0.20%',dist:'Ausschüttend',desc:'NASDAQ-100 — das Original. Grösster Tech-ETF der Welt.'},
+    {id:'SPY',sym:'SPY',name:'SPDR S&P 500 ETF Trust',icon:'S',color:'#c41230',bg:'rgba(196,18,48,0.15)',provider:'State Street',isin:'US78462F1030',ter:'0.09%',dist:'Ausschüttend',desc:'Der erste ETF der USA. S&P 500, täglich liquide.'},
+    {id:'XLK',sym:'XLK',name:'Technology Select Sector SPDR Fund',icon:'S',color:'#c41230',bg:'rgba(196,18,48,0.15)',provider:'State Street',isin:'US81369Y8030',ter:'0.09%',dist:'Ausschüttend',desc:'US-Technologiesektor — Apple, Microsoft, NVIDIA etc.'},
+  ],
 
-etf: [
-  {id:'VWRL',    sym:'VWRL',    name:'Vanguard FTSE All-World ETF',         icon:'V', color:'#941b2f', bg:'rgba(148,27,47,0.15)', provider:'Vanguard',  isin:'IE00B3RBWM25', ter:'0.22%', dist:'Ausschüttend', desc:'Weltaktien — FTSE All-World Index, ~3900 Unternehmen.'},
-  {id:'IWDA',    sym:'IWDA',    name:'iShares Core MSCI World ETF',          icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares',   isin:'IE00B4L5Y983', ter:'0.20%', dist:'Thesaurierend', desc:'MSCI World — 1500+ Unternehmen aus 23 Industrieländern.'},
-  {id:'CSPX',    sym:'CSPX',   name:'iShares Core S&P 500 ETF',             icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares',   isin:'IE00B5BMR087', ter:'0.07%', dist:'Thesaurierend', desc:'S&P 500 — 500 grösste US-Unternehmen.'},
-  {id:'EQQQ',    sym:'EQQQ',   name:'Invesco NASDAQ-100 ETF',               icon:'Q', color:'#0061a8', bg:'rgba(0,97,168,0.15)',  provider:'Invesco',   isin:'IE0032077012', ter:'0.30%', dist:'Thesaurierend', desc:'NASDAQ-100 — 100 grösste Nicht-Finanzunternehmen der NASDAQ.'},
-  {id:'VUSA',    sym:'VUSA',   name:'Vanguard S&P 500 ETF',                 icon:'V', color:'#941b2f', bg:'rgba(148,27,47,0.15)', provider:'Vanguard',  isin:'IE00B3XXRP09', ter:'0.07%', dist:'Ausschüttend', desc:'S&P 500 ETF mit niedrigen Kosten von Vanguard.'},
-  {id:'XDWD',    sym:'XDWD',   name:'Xtrackers MSCI World Swap ETF',        icon:'X', color:'#FFB300', bg:'rgba(255,179,0,0.15)', provider:'Xtrackers', isin:'IE00BJ0KDQ92', ter:'0.19%', dist:'Thesaurierend', desc:'Synthetischer MSCI World via Total Return Swap.'},
-  {id:'EUNL',    sym:'EUNL',   name:'iShares Core MSCI World ETF (EUR)',     icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares',   isin:'IE00B4L5Y983', ter:'0.20%', dist:'Thesaurierend', desc:'MSCI World, an Euronext Amsterdam gelistet.'},
-  {id:'SSAC',    sym:'SSAC',   name:'iShares MSCI ACWI ETF',                icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares',   isin:'IE00B6R52259', ter:'0.20%', dist:'Thesaurierend', desc:'MSCI ACWI — Welt inkl. Schwellenländer.'},
-  {id:'VWCE',    sym:'VWCE',   name:'Vanguard FTSE All-World ETF (Acc)',     icon:'V', color:'#941b2f', bg:'rgba(148,27,47,0.15)', provider:'Vanguard',  isin:'IE00BK5BQT80', ter:'0.22%', dist:'Thesaurierend', desc:'Thesaurierende Version des VWRL.'},
-  {id:'SMEA',    sym:'SMEA',   name:'iShares STOXX Europe 600 ETF',          icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares',   isin:'IE00B3ZW0K18', ter:'0.20%', dist:'Thesaurierend', desc:'Europa-Aktien — STOXX Europe 600 Index.'},
-  {id:'LYPS',    sym:'LYPS',   name:'Lyxor S&P 500 ETF',                    icon:'L', color:'#00205b', bg:'rgba(0,32,91,0.15)',   provider:'Lyxor',     isin:'LU0496786574', ter:'0.09%', dist:'Thesaurierend', desc:'S&P 500 via Lyxor (jetzt Amundi).'},
-  {id:'MSCI',    sym:'URTH',   name:'iShares MSCI World ETF (USD)',          icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares',   isin:'US46432F3733', ter:'0.24%', dist:'Ausschüttend', desc:'MSCI World in USD auf NYSE Arca.'},
-  {id:'QQQ',     sym:'QQQ',    name:'Invesco QQQ Trust',                    icon:'Q', color:'#0061a8', bg:'rgba(0,97,168,0.15)',  provider:'Invesco',   isin:'US46090E1038', ter:'0.20%', dist:'Ausschüttend', desc:'NASDAQ-100 — das Original. Grösster Tech-ETF der Welt.'},
-  {id:'SPY',     sym:'SPY',    name:'SPDR S&P 500 ETF Trust',               icon:'S', color:'#c41230', bg:'rgba(196,18,48,0.15)', provider:'State Street',isin:'US78462F1030',ter:'0.09%', dist:'Ausschüttend', desc:'Der erste ETF der USA. S&P 500, täglich liquide.'},
-  {id:'XLK',     sym:'XLK',    name:'Technology Select Sector SPDR Fund',   icon:'S', color:'#c41230', bg:'rgba(196,18,48,0.15)', provider:'State Street',isin:'US81369Y8030',ter:'0.09%', dist:'Ausschüttend', desc:'US-Technologiesektor — Apple, Microsoft, NVIDIA etc.'},
-],
+  stock: [
+    {id:'AAPL',sym:'AAPL',name:'Apple Inc.',icon:'A',color:'#555',bg:'rgba(85,85,85,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'Hersteller von iPhone, Mac, iPad sowie Services.'},
+    {id:'MSFT',sym:'MSFT',name:'Microsoft Corporation',icon:'M',color:'#00bcf2',bg:'rgba(0,188,242,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'Software, Cloud (Azure), Office 365, LinkedIn, Xbox.'},
+    {id:'NVDA',sym:'NVDA',name:'NVIDIA Corporation',icon:'N',color:'#76b900',bg:'rgba(118,185,0,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'Weltführend in GPUs und KI-Chips.'},
+    {id:'AMZN',sym:'AMZN',name:'Amazon.com Inc.',icon:'A',color:'#ff9900',bg:'rgba(255,153,0,0.15)',exch:'NASDAQ',sect:'Consumer Disc.',country:'USA',desc:'E-Commerce Gigant und AWS Cloud-Marktführer.'},
+    {id:'GOOGL',sym:'GOOGL',name:'Alphabet Inc.',icon:'G',color:'#4285f4',bg:'rgba(66,133,244,0.15)',exch:'NASDAQ',sect:'Communication',country:'USA',desc:'Google Search, YouTube, Google Cloud.'},
+    {id:'META',sym:'META',name:'Meta Platforms Inc.',icon:'M',color:'#1877f2',bg:'rgba(24,119,242,0.15)',exch:'NASDAQ',sect:'Communication',country:'USA',desc:'Facebook, Instagram, WhatsApp, Reality Labs.'},
+    {id:'TSLA',sym:'TSLA',name:'Tesla Inc.',icon:'T',color:'#cc0000',bg:'rgba(204,0,0,0.15)',exch:'NASDAQ',sect:'Consumer Disc.',country:'USA',desc:'Elektrofahrzeuge, Energielösungen, Autopilot.'},
+    {id:'BRK-B',sym:'BRK.B',name:'Berkshire Hathaway B',icon:'B',color:'#27408b',bg:'rgba(39,64,139,0.15)',exch:'NYSE',sect:'Financials',country:'USA',desc:'Warren Buffetts Holding — Apple, Coca-Cola, BNSF Railway.'},
+    {id:'V',sym:'V',name:'Visa Inc.',icon:'V',color:'#1a1f71',bg:'rgba(26,31,113,0.15)',exch:'NYSE',sect:'Financials',country:'USA',desc:'Weltgrösstes Zahlungsnetzwerk.'},
+    {id:'MA',sym:'MA',name:'Mastercard Inc.',icon:'M',color:'#eb001b',bg:'rgba(235,0,27,0.15)',exch:'NYSE',sect:'Financials',country:'USA',desc:'Zweitgrösstes globales Zahlungsnetzwerk.'},
+    {id:'JPM',sym:'JPM',name:'JPMorgan Chase & Co.',icon:'J',color:'#0033a0',bg:'rgba(0,51,160,0.15)',exch:'NYSE',sect:'Financials',country:'USA',desc:'Grösste US-Bank nach Vermögen.'},
+    {id:'GS',sym:'GS',name:'Goldman Sachs Group',icon:'G',color:'#7db3e6',bg:'rgba(125,179,230,0.15)',exch:'NYSE',sect:'Financials',country:'USA',desc:'Globale Investmentbank und Asset Manager.'},
+    {id:'BAC',sym:'BAC',name:'Bank of America',icon:'B',color:'#e31837',bg:'rgba(227,24,55,0.15)',exch:'NYSE',sect:'Financials',country:'USA',desc:'Zweitgrösste US-Bank nach Vermögen.'},
+    {id:'BLK',sym:'BLK',name:'BlackRock Inc.',icon:'B',color:'#3a3a3a',bg:'rgba(255,255,255,0.08)',exch:'NYSE',sect:'Financials',country:'USA',desc:'Weltgrösster Asset Manager. Mutterkonzern von iShares.'},
+    {id:'KO',sym:'KO',name:'Coca-Cola Company',icon:'K',color:'#f40009',bg:'rgba(244,0,9,0.15)',exch:'NYSE',sect:'Consumer Staples',country:'USA',desc:'Weltgrösster Softdrink-Hersteller.'},
+    {id:'PEP',sym:'PEP',name:'PepsiCo Inc.',icon:'P',color:'#004c9b',bg:'rgba(0,76,155,0.15)',exch:'NASDAQ',sect:'Consumer Staples',country:'USA',desc:'Pepsi, Lays, Gatorade, Doritos.'},
+    {id:'MCD',sym:'MCD',name:"McDonald's Corporation",icon:'M',color:'#ffc72c',bg:'rgba(255,199,44,0.15)',exch:'NYSE',sect:'Consumer Disc.',country:'USA',desc:'Weltweit grösste Restaurantkette.'},
+    {id:'PG',sym:'PG',name:'Procter & Gamble',icon:'P',color:'#003da5',bg:'rgba(0,61,165,0.15)',exch:'NYSE',sect:'Consumer Staples',country:'USA',desc:'Gillette, Pampers, Ariel, Head & Shoulders.'},
+    {id:'WMT',sym:'WMT',name:'Walmart Inc.',icon:'W',color:'#0071ce',bg:'rgba(0,113,206,0.15)',exch:'NYSE',sect:'Consumer Staples',country:'USA',desc:'Weltweit grösster Einzelhändler.'},
+    {id:'COST',sym:'COST',name:'Costco Wholesale',icon:'C',color:'#e31837',bg:'rgba(227,24,55,0.15)',exch:'NASDAQ',sect:'Consumer Staples',country:'USA',desc:'Grösste Warehouse-Club-Kette in den USA.'},
+    {id:'NKE',sym:'NKE',name:'Nike Inc.',icon:'N',color:'#000',bg:'rgba(255,255,255,0.06)',exch:'NYSE',sect:'Consumer Disc.',country:'USA',desc:'Weltgrösster Sportartikelhersteller.'},
+    {id:'DIS',sym:'DIS',name:'Walt Disney Company',icon:'D',color:'#113ccf',bg:'rgba(17,60,207,0.15)',exch:'NYSE',sect:'Communication',country:'USA',desc:'Disney, Pixar, Marvel, Star Wars, ESPN, Disney+.'},
+    {id:'NFLX',sym:'NFLX',name:'Netflix Inc.',icon:'N',color:'#e50914',bg:'rgba(229,9,20,0.15)',exch:'NASDAQ',sect:'Communication',country:'USA',desc:'Marktführer im Video-Streaming.'},
+    {id:'JNJ',sym:'JNJ',name:'Johnson & Johnson',icon:'J',color:'#cc0033',bg:'rgba(204,0,51,0.15)',exch:'NYSE',sect:'Healthcare',country:'USA',desc:'Pharma und Medizinprodukte.'},
+    {id:'LLY',sym:'LLY',name:'Eli Lilly and Company',icon:'L',color:'#d52b1e',bg:'rgba(213,43,30,0.15)',exch:'NYSE',sect:'Healthcare',country:'USA',desc:'GLP-1 Medikamente (Mounjaro, Zepbound), Onkologie.'},
+    {id:'PFE',sym:'PFE',name:'Pfizer Inc.',icon:'P',color:'#0093d0',bg:'rgba(0,147,208,0.15)',exch:'NYSE',sect:'Healthcare',country:'USA',desc:'Globaler Pharma-Konzern.'},
+    {id:'MRK',sym:'MRK',name:'Merck & Co.',icon:'M',color:'#007a73',bg:'rgba(0,122,115,0.15)',exch:'NYSE',sect:'Healthcare',country:'USA',desc:'Onkologie-Spezialist (Keytruda).'},
+    {id:'ABBV',sym:'ABBV',name:'AbbVie Inc.',icon:'A',color:'#061f5c',bg:'rgba(6,31,92,0.15)',exch:'NYSE',sect:'Healthcare',country:'USA',desc:'Spin-off von Abbott, bekannt für Humira.'},
+    {id:'UNH',sym:'UNH',name:'UnitedHealth Group',icon:'U',color:'#002677',bg:'rgba(0,38,119,0.15)',exch:'NYSE',sect:'Healthcare',country:'USA',desc:'Grösster US-Krankenversicherer.'},
+    {id:'ORCL',sym:'ORCL',name:'Oracle Corporation',icon:'O',color:'#f80000',bg:'rgba(248,0,0,0.15)',exch:'NYSE',sect:'Technology',country:'USA',desc:'Datenbanken und Enterprise-Software.'},
+    {id:'ADBE',sym:'ADBE',name:'Adobe Inc.',icon:'A',color:'#ff0000',bg:'rgba(255,0,0,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'Creative Cloud, Document Cloud, Marketing-Tools.'},
+    {id:'CRM',sym:'CRM',name:'Salesforce Inc.',icon:'S',color:'#00a1e0',bg:'rgba(0,161,224,0.15)',exch:'NYSE',sect:'Technology',country:'USA',desc:'Marktführer für CRM-Software.'},
+    {id:'AMD',sym:'AMD',name:'Advanced Micro Devices',icon:'A',color:'#ed1c24',bg:'rgba(237,28,36,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'CPU- und GPU-Hersteller, NVIDIA-Konkurrent.'},
+    {id:'INTC',sym:'INTC',name:'Intel Corporation',icon:'I',color:'#0071c5',bg:'rgba(0,113,197,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'PC- und Server-Chips.'},
+    {id:'QCOM',sym:'QCOM',name:'Qualcomm Inc.',icon:'Q',color:'#3253dc',bg:'rgba(50,83,220,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'Mobile-Chipsätze und drahtlose Technologie.'},
+    {id:'AVGO',sym:'AVGO',name:'Broadcom Inc.',icon:'B',color:'#cc092f',bg:'rgba(204,9,47,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'Netzwerk- und Speicher-Chips, KI-Beschleuniger.'},
+    {id:'IBM',sym:'IBM',name:'IBM',icon:'I',color:'#054ada',bg:'rgba(5,74,218,0.15)',exch:'NYSE',sect:'Technology',country:'USA',desc:'Enterprise-Services, Watson AI, Red Hat.'},
+    {id:'CSCO',sym:'CSCO',name:'Cisco Systems',icon:'C',color:'#1ba0d7',bg:'rgba(27,160,215,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'Netzwerk-Hardware und IT-Sicherheit.'},
+    {id:'PLTR',sym:'PLTR',name:'Palantir Technologies',icon:'P',color:'#3a3a3a',bg:'rgba(255,255,255,0.06)',exch:'NYSE',sect:'Technology',country:'USA',desc:'Datenanalyse-Plattformen für Regierung und Unternehmen.'},
+    {id:'UBER',sym:'UBER',name:'Uber Technologies',icon:'U',color:'#000',bg:'rgba(255,255,255,0.06)',exch:'NYSE',sect:'Consumer Disc.',country:'USA',desc:'Ride-Hailing und Lieferservices.'},
+    {id:'ABNB',sym:'ABNB',name:'Airbnb Inc.',icon:'A',color:'#ff5a5f',bg:'rgba(255,90,95,0.15)',exch:'NASDAQ',sect:'Consumer Disc.',country:'USA',desc:'Globaler Marktplatz für Unterkünfte.'},
+    {id:'SHOP',sym:'SHOP',name:'Shopify Inc.',icon:'S',color:'#95bf47',bg:'rgba(149,191,71,0.15)',exch:'NYSE',sect:'Technology',country:'CAN',desc:'E-Commerce-Plattform.'},
+    {id:'SNOW',sym:'SNOW',name:'Snowflake Inc.',icon:'S',color:'#29b5e8',bg:'rgba(41,181,232,0.15)',exch:'NYSE',sect:'Technology',country:'USA',desc:'Cloud-basiertes Data Warehouse.'},
+    {id:'CRWD',sym:'CRWD',name:'CrowdStrike Holdings',icon:'C',color:'#fc0000',bg:'rgba(252,0,0,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'Cloud-basierte Endpoint-Security.'},
+    {id:'NOW',sym:'NOW',name:'ServiceNow Inc.',icon:'S',color:'#62d84e',bg:'rgba(98,216,78,0.15)',exch:'NYSE',sect:'Technology',country:'USA',desc:'Enterprise Workflow Automation.'},
+    {id:'INTU',sym:'INTU',name:'Intuit Inc.',icon:'I',color:'#236cff',bg:'rgba(35,108,255,0.15)',exch:'NASDAQ',sect:'Technology',country:'USA',desc:'TurboTax, QuickBooks, Credit Karma.'},
+    {id:'ARM',sym:'ARM',name:'Arm Holdings',icon:'A',color:'#0091bd',bg:'rgba(0,145,189,0.15)',exch:'NASDAQ',sect:'Technology',country:'UK',desc:'IP-Lizenzierung für mobile Chips.'},
+    {id:'PYPL',sym:'PYPL',name:'PayPal Holdings',icon:'P',color:'#003087',bg:'rgba(0,48,135,0.15)',exch:'NASDAQ',sect:'Financials',country:'USA',desc:'Online-Zahlungsdienst.'},
+    {id:'XOM',sym:'XOM',name:'ExxonMobil Corporation',icon:'X',color:'#ff1e1e',bg:'rgba(255,30,30,0.15)',exch:'NYSE',sect:'Energy',country:'USA',desc:'Grösster US-Ölkonzern.'},
+    {id:'CVX',sym:'CVX',name:'Chevron Corporation',icon:'C',color:'#1f4e8a',bg:'rgba(31,78,138,0.15)',exch:'NYSE',sect:'Energy',country:'USA',desc:'Grosser US-Öl- und Gaskonzern.'},
+    {id:'CAT',sym:'CAT',name:'Caterpillar Inc.',icon:'C',color:'#ffcd11',bg:'rgba(255,205,17,0.15)',exch:'NYSE',sect:'Industrials',country:'USA',desc:'Weltgrösster Bau- und Bergbaumaschinen-Hersteller.'},
+    {id:'BA',sym:'BA',name:'Boeing Company',icon:'B',color:'#1d4f91',bg:'rgba(29,79,145,0.15)',exch:'NYSE',sect:'Industrials',country:'USA',desc:'Flugzeughersteller und Rüstungskonzern.'},
+    {id:'NESN',sym:'NESN',name:'Nestlé S.A.',icon:'N',color:'#d4a017',bg:'rgba(212,160,23,0.15)',exch:'SIX',sect:'Consumer Staples',country:'CHE',desc:'Weltweit grösster Nahrungsmittelkonzern.'},
+    {id:'NOVN',sym:'NOVN',name:'Novartis AG',icon:'N',color:'#0460a9',bg:'rgba(4,96,169,0.15)',exch:'SIX',sect:'Healthcare',country:'CHE',desc:'Schweizer Pharma-Konzern.'},
+    {id:'ROG',sym:'ROG',name:'Roche Holding AG',icon:'R',color:'#0066cc',bg:'rgba(0,102,204,0.15)',exch:'SIX',sect:'Healthcare',country:'CHE',desc:'Pharma-Konzern, führend in Onkologie und Diagnostik.'},
+    {id:'UBSG',sym:'UBSG',name:'UBS Group AG',icon:'U',color:'#e60000',bg:'rgba(230,0,0,0.15)',exch:'SIX',sect:'Financials',country:'CHE',desc:'Grösste Schweizer Bank.'},
+    {id:'ZURN',sym:'ZURN',name:'Zurich Insurance Group',icon:'Z',color:'#2166ac',bg:'rgba(33,102,172,0.15)',exch:'SIX',sect:'Financials',country:'CHE',desc:'Globaler Versicherungskonzern.'},
+    {id:'ABBN',sym:'ABBN',name:'ABB Ltd',icon:'A',color:'#e4002b',bg:'rgba(228,0,43,0.15)',exch:'SIX',sect:'Industrials',country:'CHE',desc:'Technologiekonzern (Robotik, Energie).'},
+    {id:'LOGN',sym:'LOGN',name:'Logitech International',icon:'L',color:'#00b8fc',bg:'rgba(0,184,252,0.15)',exch:'SIX',sect:'Technology',country:'CHE',desc:'Computerperipherie und Gaming-Hardware.'},
+    {id:'ASML',sym:'ASML',name:'ASML Holding N.V.',icon:'A',color:'#005aab',bg:'rgba(0,90,171,0.15)',exch:'AMS',sect:'Technology',country:'NLD',desc:'Weltmonopolist für EUV-Lithographie-Maschinen.'},
+    {id:'SAP',sym:'SAP',name:'SAP SE',icon:'S',color:'#0fa8ea',bg:'rgba(15,168,234,0.15)',exch:'XETRA',sect:'Technology',country:'DEU',desc:'Grösster europäischer Software-Konzern (ERP).'},
+    {id:'SIE',sym:'SIE',name:'Siemens AG',icon:'S',color:'#009999',bg:'rgba(0,153,153,0.15)',exch:'XETRA',sect:'Industrials',country:'DEU',desc:'Deutscher Industrie-Mischkonzern.'},
+    {id:'MC',sym:'MC',name:'LVMH',icon:'L',color:'#3a3a3a',bg:'rgba(255,255,255,0.06)',exch:'EPA',sect:'Consumer Disc.',country:'FRA',desc:'Weltweit grösster Luxuskonzern.'},
+    {id:'RMS',sym:'RMS',name:'Hermès International',icon:'H',color:'#ff7300',bg:'rgba(255,115,0,0.15)',exch:'EPA',sect:'Consumer Disc.',country:'FRA',desc:'Französisches Luxusmode-Haus.'},
+    {id:'AIR',sym:'AIR',name:'Airbus SE',icon:'A',color:'#00205b',bg:'rgba(0,32,91,0.15)',exch:'EPA',sect:'Industrials',country:'FRA',desc:'Europäischer Flugzeughersteller.'},
+    {id:'ULVR',sym:'ULVR',name:'Unilever plc',icon:'U',color:'#1f36c7',bg:'rgba(31,54,199,0.15)',exch:'LSE',sect:'Consumer Staples',country:'GBR',desc:'Dove, Axe, Knorr, Ben & Jerry\'s.'},
+    {id:'SHEL',sym:'SHEL',name:'Shell plc',icon:'S',color:'#f8c800',bg:'rgba(248,200,0,0.15)',exch:'LSE',sect:'Energy',country:'GBR',desc:'Öl- und Gaskonzern.'},
+    {id:'NVO',sym:'NVO',name:'Novo Nordisk',icon:'N',color:'#003b71',bg:'rgba(0,59,113,0.15)',exch:'NYSE',sect:'Healthcare',country:'DNK',desc:'GLP-1 Marktführer (Ozempic, Wegovy).'},
+    {id:'ADS',sym:'ADS',name:'Adidas AG',icon:'A',color:'#000',bg:'rgba(255,255,255,0.06)',exch:'XETRA',sect:'Consumer Disc.',country:'DEU',desc:'Deutscher Sportartikelhersteller.'},
+    {id:'TSM',sym:'TSM',name:'TSMC (Taiwan Semiconductor)',icon:'T',color:'#cc0000',bg:'rgba(204,0,0,0.15)',exch:'NYSE',sect:'Technology',country:'TWN',desc:'Weltgrösste Chip-Auftragsfertigung.'},
+    {id:'SONY',sym:'SONY',name:'Sony Group',icon:'S',color:'#000',bg:'rgba(255,255,255,0.06)',exch:'NYSE',sect:'Consumer Disc.',country:'JPN',desc:'Elektronik und Entertainment (PlayStation).'},
+    {id:'TM',sym:'TM',name:'Toyota Motor Corporation',icon:'T',color:'#eb0a1e',bg:'rgba(235,10,30,0.15)',exch:'NYSE',sect:'Consumer Disc.',country:'JPN',desc:'Weltgrösster Automobilhersteller.'},
+    {id:'RACE',sym:'RACE',name:'Ferrari N.V.',icon:'F',color:'#da291c',bg:'rgba(218,41,28,0.15)',exch:'NYSE',sect:'Consumer Disc.',country:'ITA',desc:'Italienischer Luxussportwagen-Hersteller.'},
+    {id:'BKNG',sym:'BKNG',name:'Booking Holdings',icon:'B',color:'#003580',bg:'rgba(0,53,128,0.15)',exch:'NASDAQ',sect:'Consumer Disc.',country:'USA',desc:'Booking.com, Priceline, Kayak.'},
+  ],
 
-stock: [
-  // USA — Mega Caps
-  {id:'AAPL',   sym:'AAPL',   name:'Apple Inc.',               icon:'',color:'#555', bg:'rgba(85,85,85,0.15)',   exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'Hersteller von iPhone, Mac, iPad sowie Services.'},
-  {id:'MSFT',   sym:'MSFT',   name:'Microsoft Corporation',    icon:'M',color:'#00bcf2',bg:'rgba(0,188,242,0.15)',exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'Software, Cloud (Azure), Office 365, LinkedIn, Xbox.'},
-  {id:'NVDA',   sym:'NVDA',   name:'NVIDIA Corporation',       icon:'N',color:'#76b900',bg:'rgba(118,185,0,0.15)',exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'Weltführend in GPUs und KI-Chips.'},
-  {id:'AMZN',   sym:'AMZN',   name:'Amazon.com Inc.',          icon:'A',color:'#ff9900',bg:'rgba(255,153,0,0.15)',exch:'NASDAQ', sect:'Consumer Disc.',  country:'USA', desc:'E-Commerce Gigant und AWS Cloud-Marktführer.'},
-  {id:'GOOGL',  sym:'GOOGL',  name:'Alphabet Inc.',            icon:'G',color:'#4285f4',bg:'rgba(66,133,244,0.15)',exch:'NASDAQ',sect:'Communication',   country:'USA', desc:'Google Search, YouTube, Google Cloud.'},
-  {id:'META',   sym:'META',   name:'Meta Platforms Inc.',      icon:'M',color:'#1877f2',bg:'rgba(24,119,242,0.15)',exch:'NASDAQ',sect:'Communication',   country:'USA', desc:'Facebook, Instagram, WhatsApp, Reality Labs.'},
-  {id:'TSLA',   sym:'TSLA',   name:'Tesla Inc.',               icon:'T',color:'#cc0000',bg:'rgba(204,0,0,0.15)',  exch:'NASDAQ', sect:'Consumer Disc.',  country:'USA', desc:'Elektrofahrzeuge, Energielösungen, Autopilot.'},
-  {id:'BRK-B',  sym:'BRK.B',  name:'Berkshire Hathaway B',    icon:'B',color:'#27408b',bg:'rgba(39,64,139,0.15)',exch:'NYSE',   sect:'Financials',      country:'USA', desc:'Warren Buffetts Holding — Apple, Coca-Cola, BNSF Railway.'},
-  // Financials
-  {id:'V',      sym:'V',      name:'Visa Inc.',                icon:'V',color:'#1a1f71',bg:'rgba(26,31,113,0.15)',exch:'NYSE',   sect:'Financials',      country:'USA', desc:'Weltgrösstes Zahlungsnetzwerk.'},
-  {id:'MA',     sym:'MA',     name:'Mastercard Inc.',          icon:'M',color:'#eb001b',bg:'rgba(235,0,27,0.15)', exch:'NYSE',   sect:'Financials',      country:'USA', desc:'Zweitgrösstes globales Zahlungsnetzwerk.'},
-  {id:'JPM',    sym:'JPM',    name:'JPMorgan Chase & Co.',     icon:'J',color:'#0033a0',bg:'rgba(0,51,160,0.15)', exch:'NYSE',   sect:'Financials',      country:'USA', desc:'Grösste US-Bank nach Vermögen.'},
-  {id:'GS',     sym:'GS',     name:'Goldman Sachs Group',      icon:'G',color:'#7db3e6',bg:'rgba(125,179,230,0.15)',exch:'NYSE',  sect:'Financials',      country:'USA', desc:'Globale Investmentbank und Asset Manager.'},
-  {id:'BAC',    sym:'BAC',    name:'Bank of America',          icon:'B',color:'#e31837',bg:'rgba(227,24,55,0.15)', exch:'NYSE',   sect:'Financials',      country:'USA', desc:'Zweitgrösste US-Bank nach Vermögen.'},
-  {id:'BLK',    sym:'BLK',    name:'BlackRock Inc.',           icon:'B',color:'#3a3a3a',bg:'rgba(255,255,255,0.08)',exch:'NYSE',  sect:'Financials',      country:'USA', desc:'Weltgrösster Asset Manager. Mutterkonzern von iShares.'},
-  // Consumer
-  {id:'KO',     sym:'KO',     name:'Coca-Cola Company',        icon:'K',color:'#f40009',bg:'rgba(244,0,9,0.15)',  exch:'NYSE',   sect:'Consumer Staples',country:'USA', desc:'Weltgrösster Softdrink-Hersteller.'},
-  {id:'PEP',    sym:'PEP',    name:'PepsiCo Inc.',             icon:'P',color:'#004c9b',bg:'rgba(0,76,155,0.15)', exch:'NASDAQ', sect:'Consumer Staples',country:'USA', desc:'Pepsi, Lays, Gatorade, Doritos.'},
-  {id:'MCD',    sym:'MCD',    name:"McDonald's Corporation",   icon:'M',color:'#ffc72c',bg:'rgba(255,199,44,0.15)',exch:'NYSE',  sect:'Consumer Disc.',  country:'USA', desc:'Weltweit grösste Restaurantkette.'},
-  {id:'PG',     sym:'PG',     name:'Procter & Gamble',         icon:'P',color:'#003da5',bg:'rgba(0,61,165,0.15)', exch:'NYSE',   sect:'Consumer Staples',country:'USA', desc:'Gillette, Pampers, Ariel, Head & Shoulders.'},
-  {id:'WMT',    sym:'WMT',    name:'Walmart Inc.',             icon:'W',color:'#0071ce',bg:'rgba(0,113,206,0.15)',exch:'NYSE',   sect:'Consumer Staples',country:'USA', desc:'Weltweit grösster Einzelhändler.'},
-  {id:'COST',   sym:'COST',   name:'Costco Wholesale',         icon:'C',color:'#e31837',bg:'rgba(227,24,55,0.15)', exch:'NASDAQ', sect:'Consumer Staples',country:'USA', desc:'Grösste Warehouse-Club-Kette in den USA.'},
-  {id:'NKE',    sym:'NKE',    name:'Nike Inc.',                icon:'✓',color:'#000',   bg:'rgba(255,255,255,0.06)',exch:'NYSE',  sect:'Consumer Disc.',  country:'USA', desc:'Weltgrösster Sportartikelhersteller.'},
-  {id:'DIS',    sym:'DIS',    name:'Walt Disney Company',      icon:'D',color:'#113ccf',bg:'rgba(17,60,207,0.15)',exch:'NYSE',   sect:'Communication',   country:'USA', desc:'Disney, Pixar, Marvel, Star Wars, ESPN, Disney+.'},
-  {id:'NFLX',   sym:'NFLX',   name:'Netflix Inc.',             icon:'N',color:'#e50914',bg:'rgba(229,9,20,0.15)', exch:'NASDAQ', sect:'Communication',   country:'USA', desc:'Marktführer im Video-Streaming.'},
-  // Healthcare
-  {id:'JNJ',    sym:'JNJ',    name:'Johnson & Johnson',        icon:'J',color:'#cc0033',bg:'rgba(204,0,51,0.15)', exch:'NYSE',   sect:'Healthcare',      country:'USA', desc:'Pharma und Medizinprodukte.'},
-  {id:'LLY',    sym:'LLY',    name:'Eli Lilly and Company',    icon:'L',color:'#d52b1e',bg:'rgba(213,43,30,0.15)',exch:'NYSE',   sect:'Healthcare',      country:'USA', desc:'GLP-1 Medikamente (Mounjaro, Zepbound), Onkologie.'},
-  {id:'PFE',    sym:'PFE',    name:'Pfizer Inc.',              icon:'P',color:'#0093d0',bg:'rgba(0,147,208,0.15)',exch:'NYSE',   sect:'Healthcare',      country:'USA', desc:'Globaler Pharma-Konzern.'},
-  {id:'MRK',    sym:'MRK',    name:'Merck & Co.',              icon:'M',color:'#007a73',bg:'rgba(0,122,115,0.15)',exch:'NYSE',   sect:'Healthcare',      country:'USA', desc:'Onkologie-Spezialist (Keytruda).'},
-  {id:'ABBV',   sym:'ABBV',   name:'AbbVie Inc.',              icon:'A',color:'#061f5c',bg:'rgba(6,31,92,0.15)',  exch:'NYSE',   sect:'Healthcare',      country:'USA', desc:'Spin-off von Abbott, bekannt für Humira.'},
-  {id:'UNH',    sym:'UNH',    name:'UnitedHealth Group',       icon:'U',color:'#002677',bg:'rgba(0,38,119,0.15)', exch:'NYSE',   sect:'Healthcare',      country:'USA', desc:'Grösster US-Krankenversicherer.'},
-  // Tech extended
-  {id:'ORCL',   sym:'ORCL',   name:'Oracle Corporation',       icon:'O',color:'#f80000',bg:'rgba(248,0,0,0.15)',  exch:'NYSE',   sect:'Technology',      country:'USA', desc:'Datenbanken und Enterprise-Software.'},
-  {id:'ADBE',   sym:'ADBE',   name:'Adobe Inc.',               icon:'A',color:'#ff0000',bg:'rgba(255,0,0,0.15)',  exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'Creative Cloud, Document Cloud, Marketing-Tools.'},
-  {id:'CRM',    sym:'CRM',    name:'Salesforce Inc.',          icon:'S',color:'#00a1e0',bg:'rgba(0,161,224,0.15)',exch:'NYSE',   sect:'Technology',      country:'USA', desc:'Marktführer für CRM-Software.'},
-  {id:'AMD',    sym:'AMD',    name:'Advanced Micro Devices',   icon:'A',color:'#ed1c24',bg:'rgba(237,28,36,0.15)',exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'CPU- und GPU-Hersteller, NVIDIA-Konkurrent.'},
-  {id:'INTC',   sym:'INTC',   name:'Intel Corporation',        icon:'i',color:'#0071c5',bg:'rgba(0,113,197,0.15)',exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'PC- und Server-Chips.'},
-  {id:'QCOM',   sym:'QCOM',   name:'Qualcomm Inc.',            icon:'Q',color:'#3253dc',bg:'rgba(50,83,220,0.15)',exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'Mobile-Chipsätze und drahtlose Technologie.'},
-  {id:'AVGO',   sym:'AVGO',   name:'Broadcom Inc.',            icon:'B',color:'#cc092f',bg:'rgba(204,9,47,0.15)', exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'Netzwerk- und Speicher-Chips, KI-Beschleuniger.'},
-  {id:'IBM',    sym:'IBM',    name:'IBM',                      icon:'i',color:'#054ada',bg:'rgba(5,74,218,0.15)', exch:'NYSE',   sect:'Technology',      country:'USA', desc:'Enterprise-Services, Watson AI, Red Hat.'},
-  {id:'CSCO',   sym:'CSCO',   name:'Cisco Systems',            icon:'C',color:'#1ba0d7',bg:'rgba(27,160,215,0.15)',exch:'NASDAQ',sect:'Technology',      country:'USA', desc:'Netzwerk-Hardware und IT-Sicherheit.'},
-  {id:'PLTR',   sym:'PLTR',   name:'Palantir Technologies',    icon:'P',color:'#3a3a3a',bg:'rgba(255,255,255,0.06)',exch:'NYSE', sect:'Technology',      country:'USA', desc:'Datenanalyse-Plattformen für Regierung und Unternehmen.'},
-  {id:'UBER',   sym:'UBER',   name:'Uber Technologies',        icon:'U',color:'#000',   bg:'rgba(255,255,255,0.06)',exch:'NYSE', sect:'Consumer Disc.',  country:'USA', desc:'Ride-Hailing und Lieferservices.'},
-  {id:'ABNB',   sym:'ABNB',   name:'Airbnb Inc.',              icon:'A',color:'#ff5a5f',bg:'rgba(255,90,95,0.15)',exch:'NASDAQ', sect:'Consumer Disc.',  country:'USA', desc:'Globaler Marktplatz für Unterkünfte.'},
-  {id:'SHOP',   sym:'SHOP',   name:'Shopify Inc.',             icon:'S',color:'#95bf47',bg:'rgba(149,191,71,0.15)',exch:'NYSE',  sect:'Technology',      country:'CAN', desc:'E-Commerce-Plattform.'},
-  {id:'SNOW',   sym:'SNOW',   name:'Snowflake Inc.',           icon:'S',color:'#29b5e8',bg:'rgba(41,181,232,0.15)',exch:'NYSE', sect:'Technology',      country:'USA', desc:'Cloud-basiertes Data Warehouse.'},
-  {id:'CRWD',   sym:'CRWD',   name:'CrowdStrike Holdings',     icon:'C',color:'#fc0000',bg:'rgba(252,0,0,0.15)',  exch:'NASDAQ', sect:'Technology',      country:'USA', desc:'Cloud-basierte Endpoint-Security.'},
-  {id:'NOW',    sym:'NOW',    name:'ServiceNow Inc.',          icon:'S',color:'#62d84e',bg:'rgba(98,216,78,0.15)',exch:'NYSE',   sect:'Technology',      country:'USA', desc:'Enterprise Workflow Automation.'},
-  {id:'INTU',   sym:'INTU',   name:'Intuit Inc.',              icon:'i',color:'#236cff',bg:'rgba(35,108,255,0.15)',exch:'NASDAQ',sect:'Technology',      country:'USA', desc:'TurboTax, QuickBooks, Credit Karma.'},
-  {id:'ARM',    sym:'ARM',    name:'Arm Holdings',             icon:'A',color:'#0091bd',bg:'rgba(0,145,189,0.15)',exch:'NASDAQ', sect:'Technology',      country:'UK',  desc:'IP-Lizenzierung für mobile Chips.'},
-  {id:'PYPL',   sym:'PYPL',   name:'PayPal Holdings',          icon:'P',color:'#003087',bg:'rgba(0,48,135,0.15)', exch:'NASDAQ', sect:'Financials',      country:'USA', desc:'Online-Zahlungsdienst.'},
-  // Industrie/Energie
-  {id:'XOM',    sym:'XOM',    name:'ExxonMobil Corporation',   icon:'X',color:'#ff1e1e',bg:'rgba(255,30,30,0.15)',exch:'NYSE',   sect:'Energy',          country:'USA', desc:'Grösster US-Ölkonzern.'},
-  {id:'CVX',    sym:'CVX',    name:'Chevron Corporation',      icon:'C',color:'#1f4e8a',bg:'rgba(31,78,138,0.15)',exch:'NYSE',   sect:'Energy',          country:'USA', desc:'Grosser US-Öl- und Gaskonzern.'},
-  {id:'CAT',    sym:'CAT',    name:'Caterpillar Inc.',         icon:'C',color:'#ffcd11',bg:'rgba(255,205,17,0.15)',exch:'NYSE',  sect:'Industrials',     country:'USA', desc:'Weltgrösster Bau- und Bergbaumaschinen-Hersteller.'},
-  {id:'BA',     sym:'BA',     name:'Boeing Company',           icon:'B',color:'#1d4f91',bg:'rgba(29,79,145,0.15)',exch:'NYSE',   sect:'Industrials',     country:'USA', desc:'Flugzeughersteller und Rüstungskonzern.'},
-  // Schweiz
-  {id:'NESN',   sym:'NESN',   name:'Nestlé S.A.',              icon:'N',color:'#d4a017',bg:'rgba(212,160,23,0.15)',exch:'SIX',   sect:'Consumer Staples',country:'CHE', desc:'Weltweit grösster Nahrungsmittelkonzern.'},
-  {id:'NOVN',   sym:'NOVN',   name:'Novartis AG',              icon:'N',color:'#0460a9',bg:'rgba(4,96,169,0.15)', exch:'SIX',   sect:'Healthcare',      country:'CHE', desc:'Schweizer Pharma-Konzern.'},
-  {id:'ROG',    sym:'ROG',    name:'Roche Holding AG',         icon:'R',color:'#0066cc',bg:'rgba(0,102,204,0.15)',exch:'SIX',   sect:'Healthcare',      country:'CHE', desc:'Pharma-Konzern, führend in Onkologie und Diagnostik.'},
-  {id:'UBSG',   sym:'UBSG',   name:'UBS Group AG',             icon:'U',color:'#e60000',bg:'rgba(230,0,0,0.15)',  exch:'SIX',   sect:'Financials',      country:'CHE', desc:'Grösste Schweizer Bank.'},
-  {id:'ZURN',   sym:'ZURN',   name:'Zurich Insurance Group',   icon:'Z',color:'#2166ac',bg:'rgba(33,102,172,0.15)',exch:'SIX',  sect:'Financials',      country:'CHE', desc:'Globaler Versicherungskonzern.'},
-  {id:'ABBN',   sym:'ABBN',   name:'ABB Ltd',                  icon:'A',color:'#e4002b',bg:'rgba(228,0,43,0.15)', exch:'SIX',   sect:'Industrials',     country:'CHE', desc:'Technologiekonzern (Robotik, Energie).'},
-  {id:'LOGN',   sym:'LOGN',   name:'Logitech International',   icon:'L',color:'#00b8fc',bg:'rgba(0,184,252,0.15)',exch:'SIX',   sect:'Technology',      country:'CHE', desc:'Computerperipherie und Gaming-Hardware.'},
-  // Europa
-  {id:'ASML',   sym:'ASML',   name:'ASML Holding N.V.',        icon:'A',color:'#005aab',bg:'rgba(0,90,171,0.15)', exch:'AMS',   sect:'Technology',      country:'NLD', desc:'Weltmonopolist für EUV-Lithographie-Maschinen.'},
-  {id:'SAP',    sym:'SAP',    name:'SAP SE',                   icon:'S',color:'#0fa8ea',bg:'rgba(15,168,234,0.15)',exch:'XETRA', sect:'Technology',      country:'DEU', desc:'Grösster europäischer Software-Konzern (ERP).'},
-  {id:'SIE',    sym:'SIE',    name:'Siemens AG',               icon:'S',color:'#009999',bg:'rgba(0,153,153,0.15)',exch:'XETRA', sect:'Industrials',     country:'DEU', desc:'Deutscher Industrie-Mischkonzern.'},
-  {id:'MC',     sym:'MC',     name:'LVMH',                     icon:'L',color:'#3a3a3a',bg:'rgba(255,255,255,0.06)',exch:'EPA', sect:'Consumer Disc.',  country:'FRA', desc:'Weltweit grösster Luxuskonzern.'},
-  {id:'RMS',    sym:'RMS',    name:'Hermès International',     icon:'H',color:'#ff7300',bg:'rgba(255,115,0,0.15)',exch:'EPA',   sect:'Consumer Disc.',  country:'FRA', desc:'Französisches Luxusmode-Haus.'},
-  {id:'AIR',    sym:'AIR',    name:'Airbus SE',                icon:'A',color:'#00205b',bg:'rgba(0,32,91,0.15)',  exch:'EPA',   sect:'Industrials',     country:'FRA', desc:'Europäischer Flugzeughersteller.'},
-  {id:'ULVR',   sym:'ULVR',   name:'Unilever plc',             icon:'U',color:'#1f36c7',bg:'rgba(31,54,199,0.15)',exch:'LSE',   sect:'Consumer Staples',country:'GBR', desc:'Dove, Axe, Knorr, Ben & Jerry\'s.'},
-  {id:'SHEL',   sym:'SHEL',   name:'Shell plc',                icon:'S',color:'#f8c800',bg:'rgba(248,200,0,0.15)',exch:'LSE',   sect:'Energy',          country:'GBR', desc:'Öl- und Gaskonzern.'},
-  {id:'NVO',    sym:'NVO',    name:'Novo Nordisk',             icon:'N',color:'#003b71',bg:'rgba(0,59,113,0.15)', exch:'NYSE',  sect:'Healthcare',      country:'DNK', desc:'GLP-1 Marktführer (Ozempic, Wegovy).'},
-  {id:'ADS',    sym:'ADS',    name:'Adidas AG',                icon:'A',color:'#000',   bg:'rgba(255,255,255,0.06)',exch:'XETRA',sect:'Consumer Disc.', country:'DEU', desc:'Deutscher Sportartikelhersteller.'},
-  // Asien
-  {id:'TSM',    sym:'TSM',    name:'TSMC (Taiwan Semiconductor)',icon:'T',color:'#cc0000',bg:'rgba(204,0,0,0.15)',exch:'NYSE',  sect:'Technology',      country:'TWN', desc:'Weltgrösste Chip-Auftragsfertigung.'},
-  {id:'SONY',   sym:'SONY',   name:'Sony Group',               icon:'S',color:'#000',   bg:'rgba(255,255,255,0.06)',exch:'NYSE', sect:'Consumer Disc.',  country:'JPN', desc:'Elektronik und Entertainment (PlayStation).'},
-  {id:'TM',     sym:'TM',     name:'Toyota Motor Corporation', icon:'T',color:'#eb0a1e',bg:'rgba(235,10,30,0.15)',exch:'NYSE',  sect:'Consumer Disc.',  country:'JPN', desc:'Weltgrösster Automobilhersteller.'},
-  {id:'RACE',   sym:'RACE',   name:'Ferrari N.V.',             icon:'F',color:'#da291c',bg:'rgba(218,41,28,0.15)',exch:'NYSE',  sect:'Consumer Disc.',  country:'ITA', desc:'Italienischer Luxussportwagen-Hersteller.'},
-  {id:'BKNG',   sym:'BKNG',   name:'Booking Holdings',         icon:'B',color:'#003580',bg:'rgba(0,53,128,0.15)', exch:'NASDAQ', sect:'Consumer Disc.',  country:'USA', desc:'Booking.com, Priceline, Kayak.'},
-],
-
-metal: [
-  {id:'gold',      sym:'XAU', name:'Gold',      icon:'Au', color:'#fbbf24', bg:'rgba(251,191,36,0.15)',  unit:'Unze (oz)', desc:'Sicherer Hafen, Edelmetall. Preis in USD pro Feinunze (31.1g). Quelle: metals.live'},
-  {id:'silver',    sym:'XAG', name:'Silber',    icon:'Ag', color:'#c0c4cc', bg:'rgba(192,196,204,0.15)', unit:'Unze (oz)', desc:'Industrie- und Edelmetall. Preis in USD pro Feinunze.'},
-  {id:'platinum',  sym:'XPT', name:'Platin',    icon:'Pt', color:'#e5e7eb', bg:'rgba(229,231,235,0.15)', unit:'Unze (oz)', desc:'Seltenes Edelmetall — v.a. in Automobil-Katalysatoren.'},
-  {id:'palladium', sym:'XPD', name:'Palladium', icon:'Pd', color:'#d4d4d8', bg:'rgba(212,212,216,0.15)', unit:'Unze (oz)', desc:'Seltenster der vier Edelmetalle — v.a. Abgaskatalysatoren.'},
-],
-
+  metal: [
+    {id:'gold',sym:'XAU',name:'Gold',icon:'Au',color:'#fbbf24',bg:'rgba(251,191,36,0.15)',unit:'Unze (oz)',desc:'Sicherer Hafen, Edelmetall. Preis in USD pro Feinunze.'},
+    {id:'silver',sym:'XAG',name:'Silber',icon:'Ag',color:'#c0c4cc',bg:'rgba(192,196,204,0.15)',unit:'Unze (oz)',desc:'Industrie- und Edelmetall. Preis in USD pro Feinunze.'},
+    {id:'platinum',sym:'XPT',name:'Platin',icon:'Pt',color:'#e5e7eb',bg:'rgba(229,231,235,0.15)',unit:'Unze (oz)',desc:'Seltenes Edelmetall — v.a. in Automobil-Katalysatoren.'},
+    {id:'palladium',sym:'XPD',name:'Palladium',icon:'Pd',color:'#d4d4d8',bg:'rgba(212,212,216,0.15)',unit:'Unze (oz)',desc:'Seltenster der vier Edelmetalle — v.a. Abgaskatalysatoren.'},
+  ],
 };
 
-// Flatten Catalog for lookups
 function findAsset(id, type) {
   const list = CATALOG[type] || [];
   return list.find(a => a.id === id) || null;
 }
+
 function allAssets() {
-  return Object.entries(CATALOG).flatMap(([type, list]) => list.map(a => ({...a, type})));
+  return Object.entries(CATALOG).flatMap(([type, list]) => list.map(a => ({ ...a, type })));
 }
 
-// ── PERSISTENCE ─────────────────────────────────────────────
 function load() {
   try {
     const t = localStorage.getItem(STORAGE.TXNS);
@@ -814,55 +192,92 @@ function load() {
     const h = localStorage.getItem(STORAGE.HCACHE);
     if (h) histCache = JSON.parse(h);
     const s = localStorage.getItem(STORAGE.SETTINGS);
-    if (s) settings = {...settings, ...JSON.parse(s)};
+    if (s) settings = { ...settings, ...JSON.parse(s) };
     const apiBase = localStorage.getItem('vaultis_api_base');
     if (apiBase) API_BASE = apiBase;
-  } catch(e) { console.warn('load error', e); }
+  } catch (e) {
+    console.warn('load error', e);
+  }
 }
+
 function saveTxns() { localStorage.setItem(STORAGE.TXNS, JSON.stringify(transactions)); }
 function saveManual() { localStorage.setItem(STORAGE.MANUAL, JSON.stringify(manualPrices)); }
 function savePCache() { localStorage.setItem(STORAGE.PCACHE, JSON.stringify(priceCache)); }
 function saveHCache() { localStorage.setItem(STORAGE.HCACHE, JSON.stringify(histCache)); }
 function saveSettings() { localStorage.setItem(STORAGE.SETTINGS, JSON.stringify(settings)); }
+
 function saveApiBase(val) {
   const trimmed = val.trim();
   API_BASE = trimmed || API_BASE_DEFAULT;
   localStorage.setItem('vaultis_api_base', API_BASE);
-  document.getElementById('set-api-status').textContent = `Gespeichert: ${API_BASE}`;
+  const el = document.getElementById('set-api-status');
+  if (el) el.textContent = `Gespeichert: ${API_BASE}`;
 }
 
-// ── MANUAL PRICES ────────────────────────────────────────────
 function setManualPrice(assetId, price) {
   manualPrices[assetId] = { price: parseFloat(price), currency: settings.currency, setAt: Date.now() };
   saveManual();
 }
-function clearManualPrice(assetId) { delete manualPrices[assetId]; saveManual(); }
+
+function clearManualPrice(assetId) {
+  delete manualPrices[assetId];
+  saveManual();
+}
+
 function getEffectivePrice(assetId) {
-  if (manualPrices[assetId]) return { price: manualPrices[assetId].price, source:'manual', change24h:0 };
-  if (priceCache[assetId]) return { price: priceCache[assetId].price, source: priceCache[assetId].source || 'cached', change24h: priceCache[assetId].change24h || 0 };
+  if (manualPrices[assetId]) {
+    return { price: manualPrices[assetId].price, source: 'manual', change24h: 0 };
+  }
+  if (priceCache[assetId] && typeof priceCache[assetId].price === 'number' && priceCache[assetId].price > 0) {
+    return {
+      price: priceCache[assetId].price,
+      source: priceCache[assetId].source || 'cached',
+      change24h: priceCache[assetId].change24h || 0,
+    };
+  }
   return null;
 }
 
-// ── API CALLS ────────────────────────────────────────────────
-async function apiGet(path) {
+async function apiGet(path, timeoutMs = 10000) {
   if (!API_BASE) throw new Error('API_BASE nicht konfiguriert');
+
   const url = API_BASE.replace(/\/$/, '') + path;
-  const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  if (!r.ok) {
-    const body = await r.json().catch(() => ({}));
-    throw new Error(body.error || `HTTP ${r.status}`);
-  }
-  return r.json();
+
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Request Timeout')), timeoutMs);
+  });
+
+  const fetchPromise = fetch(url).then(async (r) => {
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${r.status}`);
+    }
+    return r.json();
+  });
+
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 async function fetchQuote(id, type) {
   try {
     const cur = settings.currency;
     const data = await apiGet(`/api/quote?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&currency=${cur}`);
-    priceCache[id] = { price: data.price, change24h: data.change24h, currency: data.currency, source: data.source, fetchedAt: Date.now() };
+
+    if (!data || typeof data.price !== 'number' || data.price <= 0) {
+      return null;
+    }
+
+    priceCache[id] = {
+      price: data.price,
+      change24h: data.change24h || data.percent || 0,
+      currency: data.currency || cur,
+      source: data.source || 'api',
+      fetchedAt: Date.now()
+    };
+
     savePCache();
     return data;
-  } catch(e) {
+  } catch (e) {
     console.warn(`[quote] ${id}:`, e.message);
     return null;
   }
@@ -872,33 +287,72 @@ async function fetchHistory(id, type, range) {
   try {
     const cur = settings.currency;
     const data = await apiGet(`/api/history?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&range=${range}&currency=${cur}`);
-    return data; // {symbol, type, range, currency, source, points:[{date, price}]}
-  } catch(e) {
+    return data;
+  } catch (e) {
     console.warn(`[history] ${id} ${range}:`, e.message);
     return null;
   }
 }
 
 async function fetchHistoryByDate(id, type, date) {
-  const cacheKey = `${id}_${date}_${settings.currency}`;
+  const cacheKey = `${id}_${type}_${date}_${settings.currency}`;
   if (histCache[cacheKey] != null) return histCache[cacheKey];
+
   try {
-    const cur = settings.currency;
-    const data = await apiGet(`/api/history-by-date?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&date=${date}&currency=${cur}`);
-    histCache[cacheKey] = data.price;
-    saveHCache();
-    return data.price;
-  } catch(e) {
+    const target = new Date(date);
+    if (isNaN(target.getTime())) return null;
+
+    const today = new Date();
+    const diffDays = Math.floor((today - target) / 86400000);
+
+    if (diffDays <= 0) {
+      const q = await fetchQuote(id, type);
+      if (q && typeof q.price === 'number' && q.price > 0) {
+        histCache[cacheKey] = q.price;
+        saveHCache();
+        return q.price;
+      }
+      return null;
+    }
+
+    let range = '1m';
+    if (diffDays > 30 && diffDays <= 180) range = '6m';
+    else if (diffDays > 180) range = '1y';
+
+    const data = await fetchHistory(id, type, range);
+    if (!data || !Array.isArray(data.points) || data.points.length === 0) return null;
+
+    const targetStr = date.slice(0, 10);
+    let best = null;
+
+    for (const pt of data.points) {
+      const ptDate = String(pt.date).slice(0, 10);
+      if (ptDate <= targetStr && typeof pt.price === 'number' && pt.price > 0) {
+        best = pt.price;
+      }
+    }
+
+    if (best == null) {
+      const first = data.points.find(pt => typeof pt.price === 'number' && pt.price > 0);
+      if (first) best = first.price;
+    }
+
+    if (best != null) {
+      histCache[cacheKey] = best;
+      saveHCache();
+      return best;
+    }
+
+    return null;
+  } catch (e) {
     console.warn(`[hist-by-date] ${id} ${date}:`, e.message);
     return null;
   }
 }
 
-// ── PORTFOLIO CALCULATIONS ───────────────────────────────────
-// Single source of truth: transactions[] + getEffectivePrice()
 function getPositions() {
-  // Group transactions by assetId+type
   const grouped = {};
+
   for (const t of transactions) {
     const key = `${t.type}:${t.assetId}`;
     if (!grouped[key]) grouped[key] = { assetId: t.assetId, type: t.type, txns: [] };
@@ -909,7 +363,9 @@ function getPositions() {
     const asset = findAsset(g.assetId, g.type);
     if (!asset) return null;
 
-    let units = 0, investedTotal = 0;
+    let units = 0;
+    let investedTotal = 0;
+
     for (const t of g.txns) {
       const u = t.mode === 'amount' ? (t.calculatedUnits || 0) : (t.units || 0);
       const invested = t.mode === 'amount'
@@ -927,21 +383,35 @@ function getPositions() {
     const currentValue = units * currentPrice;
     const pnlAbsolute = currentValue - investedTotal;
     const pnlPercent = investedTotal > 0 ? ((currentValue / investedTotal) - 1) * 100 : 0;
-    // Day change in money: currentValue - value24hAgo
-    const priorValue = change24h !== 0 ? currentValue / (1 + change24h/100) : currentValue;
+    const priorValue = change24h !== 0 ? currentValue / (1 + change24h / 100) : currentValue;
     const dayChangeAbsolute = currentValue - priorValue;
     const dayChangePercent = change24h;
 
-    return { asset, type: g.type, txns: g.txns, units, investedTotal, avgCost, currentPrice, priceSource, change24h, currentValue, pnlAbsolute, pnlPercent, dayChangeAbsolute, dayChangePercent };
+    return {
+      asset,
+      type: g.type,
+      txns: g.txns,
+      units,
+      investedTotal,
+      avgCost,
+      currentPrice,
+      priceSource,
+      change24h,
+      currentValue,
+      pnlAbsolute,
+      pnlPercent,
+      dayChangeAbsolute,
+      dayChangePercent
+    };
   }).filter(Boolean);
 }
 
 function getTotals(positions) {
-  const totalValue = positions.reduce((s,p) => s + p.currentValue, 0);
-  const totalInvested = positions.reduce((s,p) => s + p.investedTotal, 0);
+  const totalValue = positions.reduce((s, p) => s + p.currentValue, 0);
+  const totalInvested = positions.reduce((s, p) => s + p.investedTotal, 0);
   const totalPnL = totalValue - totalInvested;
   const totalPnLPct = totalInvested > 0 ? ((totalValue / totalInvested) - 1) * 100 : 0;
-  const totalDay = positions.reduce((s,p) => s + p.dayChangeAbsolute, 0);
+  const totalDay = positions.reduce((s, p) => s + p.dayChangeAbsolute, 0);
   const totalDayPct = totalValue > totalDay ? (totalDay / (totalValue - totalDay)) * 100 : 0;
   const live = positions.filter(p => p.priceSource && p.priceSource !== 'missing' && p.priceSource !== 'manual').length;
   const manual = positions.filter(p => p.priceSource === 'manual').length;
@@ -949,133 +419,95 @@ function getTotals(positions) {
   return { totalValue, totalInvested, totalPnL, totalPnLPct, totalDay, totalDayPct, live, manual, missing, total: positions.length };
 }
 
-// ── REFRESH ──────────────────────────────────────────────────
 async function refreshPrices() {
-  if (!API_BASE) { showToast('API-URL in Einstellungen konfigurieren', 'warn'); return; }
+  if (!API_BASE) {
+    showToast('API-URL in Einstellungen konfigurieren', 'warn');
+    return;
+  }
+
   const positions = getPositions();
-  if (positions.length === 0) { showToast('Keine Positionen', ''); return; }
+  if (positions.length === 0) {
+    showToast('Keine Positionen', '');
+    return;
+  }
 
   showToast('Kurse werden aktualisiert…', '');
 
   for (const p of positions) {
-    if (manualPrices[p.asset.id]) continue; // manuell → API skippen
+    if (manualPrices[p.asset.id]) continue;
     await fetchQuote(p.asset.id, p.type);
   }
 
   renderHome();
   renderPortfolio();
   renderMarkets();
+  if (detailAsset) renderDetail(detailAsset.id, detailAsset.type);
   showToast('Kurse aktualisiert', 'ok');
 }
 
-// ── ROUTING ──────────────────────────────────────────────────
-let currentScreen = 'home';
 function showScreen(id) {
   if (id !== 'detail') prevScreen = currentScreen;
   currentScreen = id;
+
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById('screen-' + id);
   if (el) el.classList.add('active');
-  document.querySelectorAll('.nav-btn[data-s]').forEach(b => b.classList.toggle('active', b.dataset.s === id));
+
+  document.querySelectorAll('.nav-btn[data-s]').forEach(b => {
+    b.classList.toggle('active', b.dataset.s === id);
+  });
+
   if (id === 'home') renderHome();
   if (id === 'portfolio') renderPortfolio();
   if (id === 'markets') renderMarkets();
   if (id === 'add' && !editingId) resetAddForm();
   if (id === 'settings') initSettings();
+
   window.scrollTo(0, 0);
 }
-function goBack() { showScreen(prevScreen); }
 
-// ── FORMAT HELPERS ───────────────────────────────────────────
-function fmtMoney(n, currency, decimals) {
-  if (currency == null) currency = settings.currency;
-  if (decimals == null) decimals = 2;
-  return new Intl.NumberFormat('de-CH', { style:'currency', currency, minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(n);
+function goBack() {
+  showScreen(prevScreen);
 }
+
+function fmtMoney(n, currency = settings.currency, decimals = 2) {
+  return new Intl.NumberFormat('de-CH', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(n);
+}
+
 function fmtPct(n) {
   const sign = n >= 0 ? '+' : '';
   return `${sign}${n.toFixed(2)}%`;
 }
+
 function fmtSign(n, currency) {
   return (n >= 0 ? '+' : '−') + fmtMoney(Math.abs(n), currency);
 }
+
 function hexToRgba(hex, a) {
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${a})`;
 }
+
 function getZurichHour() {
-  return parseInt(new Intl.DateTimeFormat('en-US', { hour:'numeric', hour12:false, timeZone:'Europe/Zurich' }).format(new Date()), 10);
+  return parseInt(new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    hour12: false,
+    timeZone: 'Europe/Zurich'
+  }).format(new Date()), 10);
 }
+
 function getGreeting() {
   const h = getZurichHour();
   if (h < 12) return 'Guten Morgen';
   if (h < 18) return 'Guten Tag';
   return 'Guten Abend';
-}
-
-// ── HOME ─────────────────────────────────────────────────────
-function renderHome() {
-  document.getElementById('greeting').textContent = getGreeting();
-  document.getElementById('greeting-sub').textContent = 'Dein Portfolio · ' + new Date().toLocaleDateString('de-CH', {day:'2-digit', month:'long', year:'numeric'});
-
-  const positions = getPositions();
-  const t = getTotals(positions);
-  const cur = settings.currency;
-
-  // Hero
-  document.getElementById('hero-val').textContent = fmtMoney(t.totalValue, cur);
-  document.getElementById('hero-inv').textContent = fmtMoney(t.totalInvested, cur);
-
-  const pnlEl = document.getElementById('hero-pnl');
-  pnlEl.textContent = fmtSign(t.totalPnL, cur);
-  pnlEl.className = 'hero-stat-val ' + (t.totalPnL >= 0 ? 'pos' : 'neg');
-  document.getElementById('hero-pnl-pct').textContent = fmtPct(t.totalPnLPct);
-  document.getElementById('hero-pnl-pct').style.color = t.totalPnL >= 0 ? 'var(--positive)' : 'var(--negative)';
-
-  const dayEl = document.getElementById('hero-day');
-  dayEl.textContent = fmtSign(t.totalDay, cur);
-  dayEl.className = 'hero-stat-val ' + (t.totalDay >= 0 ? 'pos' : (t.totalDay < 0 ? 'neg' : 'muted'));
-  const dayPctEl = document.getElementById('hero-day-pct');
-  if (isFinite(t.totalDayPct) && t.totalDayPct !== 0) {
-    dayPctEl.textContent = fmtPct(t.totalDayPct);
-    dayPctEl.style.color = t.totalDay >= 0 ? 'var(--positive)' : 'var(--negative)';
-  } else { dayPctEl.textContent = '—'; dayPctEl.style.color = 'var(--text3)'; }
-
-  const retEl = document.getElementById('hero-ret');
-  if (positions.length === 0) { retEl.className = 'hero-change zero'; retEl.textContent = '— 0.00%'; }
-  else if (t.totalPnLPct >= 0) { retEl.className = 'hero-change up'; retEl.textContent = '↑ ' + fmtPct(t.totalPnLPct); }
-  else { retEl.className = 'hero-change down'; retEl.textContent = '↓ ' + fmtPct(t.totalPnLPct); }
-
-  const qEl = document.getElementById('hero-quality');
-  if (positions.length === 0) qEl.textContent = '—';
-  else {
-    const parts = [];
-    if (t.live > 0) parts.push(`${t.live} live`);
-    if (t.manual > 0) parts.push(`${t.manual} manuell`);
-    if (t.missing > 0) parts.push(`${t.missing} fehlt`);
-    qEl.textContent = parts.join(' · ');
-    qEl.style.color = t.missing > 0 ? 'var(--gold)' : 'var(--text3)';
-  }
-
-  // Banner
-  const bannerEl = document.getElementById('home-banner');
-  if (t.missing > 0) {
-    bannerEl.innerHTML = mkBanner('info', '⚠', `${t.missing} Position${t.missing>1?'en':''} ohne Kurs`, 'Öffne die Detailseite um einen manuellen Kurs zu setzen.', 'Aktualisieren', "refreshPrices()");
-  } else { bannerEl.innerHTML = ''; }
-
-  // Positions (top 5)
-  const homePos = document.getElementById('home-positions');
-  if (positions.length === 0) {
-    homePos.innerHTML = `<div class="empty"><div class="empty-icon">◈</div><div class="empty-title">Noch keine Positionen</div><div class="empty-desc">Tippe auf + um deine erste Position hinzuzufügen.</div></div>`;
-  } else {
-    homePos.innerHTML = `<div class="pos-list">${positions.slice(0,5).map(posRow).join('')}</div>`;
-  }
-
-  // Alloc
-  if (positions.length > 0) {
-    document.getElementById('alloc-card').style.display = 'block';
-    renderAllocChart(positions);
-  } else { document.getElementById('alloc-card').style.display = 'none'; }
 }
 
 function mkBanner(cls, icon, title, desc, btnLabel, btnAction) {
@@ -1088,8 +520,12 @@ function mkBanner(cls, icon, title, desc, btnLabel, btnAction) {
 
 function posRow(p) {
   const chgCls = p.pnlPercent > 0.01 ? 'up' : (p.pnlPercent < -0.01 ? 'down' : 'zero');
-  const srcTag = p.priceSource === 'missing' ? `<span class="tag missing">?</span>` :
-                 p.priceSource === 'manual'  ? `<span class="tag manual">M</span>` : '';
+  const srcTag = p.priceSource === 'missing'
+    ? `<span class="tag missing">?</span>`
+    : p.priceSource === 'manual'
+      ? `<span class="tag manual">M</span>`
+      : '';
+
   return `<div class="pos-row" onclick="openDetail('${p.asset.id}','${p.type}')">
     <div class="pos-icon" style="background:${p.asset.bg};color:${p.asset.color}">${p.asset.icon}</div>
     <div class="pos-info">
@@ -1107,58 +543,159 @@ function posRow(p) {
   </div>`;
 }
 
-// ── ALLOC CHART ──────────────────────────────────────────────
+function renderHome() {
+  const greetingEl = document.getElementById('greeting');
+  const subEl = document.getElementById('greeting-sub');
+  if (greetingEl) greetingEl.textContent = getGreeting();
+  if (subEl) subEl.textContent = 'Dein Portfolio · ' + new Date().toLocaleDateString('de-CH', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  const positions = getPositions();
+  const t = getTotals(positions);
+  const cur = settings.currency;
+
+  document.getElementById('hero-val').textContent = fmtMoney(t.totalValue, cur);
+  document.getElementById('hero-inv').textContent = fmtMoney(t.totalInvested, cur);
+
+  const pnlEl = document.getElementById('hero-pnl');
+  pnlEl.textContent = fmtSign(t.totalPnL, cur);
+  pnlEl.className = 'hero-stat-val ' + (t.totalPnL >= 0 ? 'pos' : 'neg');
+
+  const pnlPctEl = document.getElementById('hero-pnl-pct');
+  pnlPctEl.textContent = fmtPct(t.totalPnLPct);
+  pnlPctEl.style.color = t.totalPnL >= 0 ? 'var(--positive)' : 'var(--negative)';
+
+  const dayEl = document.getElementById('hero-day');
+  dayEl.textContent = fmtSign(t.totalDay, cur);
+  dayEl.className = 'hero-stat-val ' + (t.totalDay >= 0 ? 'pos' : (t.totalDay < 0 ? 'neg' : 'muted'));
+
+  const dayPctEl = document.getElementById('hero-day-pct');
+  if (isFinite(t.totalDayPct) && t.totalDayPct !== 0) {
+    dayPctEl.textContent = fmtPct(t.totalDayPct);
+    dayPctEl.style.color = t.totalDay >= 0 ? 'var(--positive)' : 'var(--negative)';
+  } else {
+    dayPctEl.textContent = '—';
+    dayPctEl.style.color = 'var(--text3)';
+  }
+
+  const retEl = document.getElementById('hero-ret');
+  if (positions.length === 0) {
+    retEl.className = 'hero-change zero';
+    retEl.textContent = '— 0.00%';
+  } else if (t.totalPnLPct >= 0) {
+    retEl.className = 'hero-change up';
+    retEl.textContent = '↑ ' + fmtPct(t.totalPnLPct);
+  } else {
+    retEl.className = 'hero-change down';
+    retEl.textContent = '↓ ' + fmtPct(t.totalPnLPct);
+  }
+
+  const qEl = document.getElementById('hero-quality');
+  if (positions.length === 0) {
+    qEl.textContent = '—';
+  } else {
+    const parts = [];
+    if (t.live > 0) parts.push(`${t.live} live`);
+    if (t.manual > 0) parts.push(`${t.manual} manuell`);
+    if (t.missing > 0) parts.push(`${t.missing} fehlt`);
+    qEl.textContent = parts.join(' · ');
+    qEl.style.color = t.missing > 0 ? 'var(--gold)' : 'var(--text3)';
+  }
+
+  const bannerEl = document.getElementById('home-banner');
+  if (t.missing > 0) {
+    bannerEl.innerHTML = mkBanner(
+      'info',
+      '⚠',
+      `${t.missing} Position${t.missing > 1 ? 'en' : ''} ohne Kurs`,
+      'Öffne die Detailseite um einen manuellen Kurs zu setzen.',
+      'Aktualisieren',
+      'refreshPrices()'
+    );
+  } else {
+    bannerEl.innerHTML = '';
+  }
+
+  const homePos = document.getElementById('home-positions');
+  if (positions.length === 0) {
+    homePos.innerHTML = `<div class="empty"><div class="empty-icon">◈</div><div class="empty-title">Noch keine Positionen</div><div class="empty-desc">Tippe auf + um deine erste Position hinzuzufügen.</div></div>`;
+  } else {
+    homePos.innerHTML = `<div class="pos-list">${positions.slice(0, 5).map(posRow).join('')}</div>`;
+  }
+
+  if (positions.length > 0) {
+    document.getElementById('alloc-card').style.display = 'block';
+    renderAllocChart(positions);
+  } else {
+    document.getElementById('alloc-card').style.display = 'none';
+  }
+}
+
 function renderAllocChart(positions) {
   const ctx = document.getElementById('alloc-chart');
   if (!ctx) return;
+
   if (allocChart) allocChart.destroy();
 
-  const by = {crypto:0, stock:0, etf:0, metal:0};
-  positions.forEach(p => { by[p.type] = (by[p.type]||0) + p.currentValue; });
-  const total = Object.values(by).reduce((s,v)=>s+v,0);
-  const cols = { crypto:'var(--primary)', stock:'var(--positive)', etf:'var(--gold)', metal:'#c0c4cc' };
-  const labels = { crypto:'Crypto', stock:'Aktien', etf:'ETFs', metal:'Metalle' };
+  const by = { crypto: 0, stock: 0, etf: 0, metal: 0 };
+  positions.forEach(p => { by[p.type] = (by[p.type] || 0) + p.currentValue; });
+
+  const total = Object.values(by).reduce((s, v) => s + v, 0);
+  const cols = { crypto: '#7c6af5', stock: '#2ecc8f', etf: '#f0c060', metal: '#c0c4cc' };
+  const labels = { crypto: 'Crypto', stock: 'Aktien', etf: 'ETFs', metal: 'Metalle' };
   const active = Object.keys(by).filter(k => by[k] > 0);
 
-  document.getElementById('alloc-list').innerHTML = active.map(k =>
-    `<div class="alloc-row">
+  document.getElementById('alloc-list').innerHTML = active.map(k => `
+    <div class="alloc-row">
       <div class="alloc-dot" style="background:${cols[k]}"></div>
       <div class="alloc-name">${labels[k]}</div>
-      <div class="alloc-pct">${total > 0 ? (by[k]/total*100).toFixed(0) : 0}%</div>
-    </div>`).join('');
+      <div class="alloc-pct">${total > 0 ? (by[k] / total * 100).toFixed(0) : 0}%</div>
+    </div>
+  `).join('');
 
   allocChart = new Chart(ctx, {
-    type:'doughnut',
-    data: { datasets:[{ data: active.map(k => by[k] || 0.001), backgroundColor: active.map(k => cols[k]), borderColor:'#0a0a0f', borderWidth:3 }] },
-    options: { responsive:true, maintainAspectRatio:false, cutout:'72%', plugins:{ legend:{display:false}, tooltip:{enabled:false} } }
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: active.map(k => by[k] || 0.001),
+        backgroundColor: active.map(k => cols[k]),
+        borderColor: '#0a0a0f',
+        borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    }
   });
 }
 
-// ── PORTFOLIO ─────────────────────────────────────────────────
 function setPortfolioFilter(f, btn) {
   portfolioFilter = f;
   document.querySelectorAll('#ptf-filter .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderPortfolio();
 }
+
 function renderPortfolio() {
   let positions = getPositions();
   if (portfolioFilter !== 'all') positions = positions.filter(p => p.type === portfolioFilter);
+
   const t = getTotals(positions);
-  document.getElementById('ptf-sub').textContent = positions.length === 0 ? '—' :
-    `${fmtMoney(t.totalValue)} · ${fmtPct(t.totalPnLPct)}`;
+  document.getElementById('ptf-sub').textContent = positions.length === 0 ? '—' : `${fmtMoney(t.totalValue)} · ${fmtPct(t.totalPnLPct)}`;
 
   const el = document.getElementById('ptf-list');
   if (positions.length === 0) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">◈</div><div class="empty-title">Keine Positionen</div><div class="empty-desc">${portfolioFilter==='all' ? 'Füge deine erste Position hinzu.' : 'Keine '+portfolioFilter.toUpperCase()+'-Positionen.'}</div></div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">◈</div><div class="empty-title">Keine Positionen</div><div class="empty-desc">${portfolioFilter === 'all' ? 'Füge deine erste Position hinzu.' : 'Keine ' + portfolioFilter.toUpperCase() + '-Positionen.'}</div></div>`;
     return;
   }
+
   el.innerHTML = `<div class="pos-list">${positions.map(posRow).join('')}</div>`;
 }
 
-// ── DETAIL ───────────────────────────────────────────────────
 function openDetail(assetId, type) {
-  detailAsset = { id:assetId, type };
+  detailAsset = { id: assetId, type };
   renderDetail(assetId, type);
   showScreen('detail');
 }
@@ -1174,56 +711,43 @@ async function renderDetail(assetId, type) {
   const chg = eff ? eff.change24h : 0;
   const chgCls = chg > 0.01 ? 'up' : chg < -0.01 ? 'down' : 'zero';
 
-  // Price source banner
   let priceBanner = '';
   if (!eff) {
-    priceBanner = mkBanner('warn', '⚠', 'Kein Kurs verfügbar',
-      'Werte basieren auf dem Ø-Kaufpreis. Setze einen manuellen Kurs.',
-      'Kurs setzen', `openManualModal('${assetId}')`);
+    priceBanner = mkBanner('warn', '⚠', 'Kein Kurs verfügbar', 'Werte basieren auf dem Ø-Kaufpreis. Setze einen manuellen Kurs.', 'Kurs setzen', `openManualModal('${assetId}')`);
   } else if (eff.source === 'manual') {
     const mp = manualPrices[assetId];
     const when = mp ? new Date(mp.setAt).toLocaleDateString('de-CH') : '';
-    priceBanner = mkBanner('info', '◈', `Manueller Kurs (gesetzt ${when})`,
-      'Wird für alle Berechnungen verwendet.',
-      'Bearbeiten', `openManualModal('${assetId}')`);
+    priceBanner = mkBanner('info', '◈', `Manueller Kurs (gesetzt ${when})`, 'Wird für alle Berechnungen verwendet.', 'Bearbeiten', `openManualModal('${assetId}')`);
   }
 
-  // Asset-specific meta
   let metaHtml = '';
   if (type === 'stock' && a.exch) {
-    metaHtml = `<div class="kv"><div class="kv-label">Exchange</div><div class="kv-val">${a.exch}</div><div class="kv-label">Sektor</div><div class="kv-val">${a.sect||'—'}</div><div class="kv-label">Land</div><div class="kv-val">${a.country||'—'}</div></div>`;
+    metaHtml = `<div class="kv"><div class="kv-label">Exchange</div><div class="kv-val">${a.exch}</div><div class="kv-label">Sektor</div><div class="kv-val">${a.sect || '—'}</div><div class="kv-label">Land</div><div class="kv-val">${a.country || '—'}</div></div>`;
   } else if (type === 'etf' && a.provider) {
-    metaHtml = `<div class="kv"><div class="kv-label">Anbieter</div><div class="kv-val">${a.provider}</div><div class="kv-label">ISIN</div><div class="kv-val">${a.isin||'—'}</div><div class="kv-label">TER</div><div class="kv-val">${a.ter||'—'}</div><div class="kv-label">Ausschüttung</div><div class="kv-val">${a.dist||'—'}</div></div>`;
+    metaHtml = `<div class="kv"><div class="kv-label">Anbieter</div><div class="kv-val">${a.provider}</div><div class="kv-label">ISIN</div><div class="kv-val">${a.isin || '—'}</div><div class="kv-label">TER</div><div class="kv-val">${a.ter || '—'}</div><div class="kv-label">Ausschüttung</div><div class="kv-val">${a.dist || '—'}</div></div>`;
   } else if (type === 'crypto' && a.cat) {
     metaHtml = `<div class="kv"><div class="kv-label">Kategorie</div><div class="kv-val">${a.cat}</div></div>`;
   } else if (type === 'metal' && a.unit) {
     metaHtml = `<div class="kv"><div class="kv-label">Einheit</div><div class="kv-val">${a.unit}</div></div>`;
   }
 
-  // Portfolio stats (if position exists)
   let ptfHtml = '';
   if (p) {
     ptfHtml = `<div class="card" style="margin-bottom:12px;">
       <div class="section-title" style="margin-bottom:10px;">Deine Position</div>
       <div class="meta-grid">
-        <div><div class="meta-item-label">Bestand</div><div class="meta-item-val">${p.units.toLocaleString('de-CH',{maximumFractionDigits:8})}</div></div>
+        <div><div class="meta-item-label">Bestand</div><div class="meta-item-val">${p.units.toLocaleString('de-CH', { maximumFractionDigits: 8 })}</div></div>
         <div><div class="meta-item-label">Ø Kaufpreis</div><div class="meta-item-val">${fmtMoney(p.avgCost)}</div></div>
         <div><div class="meta-item-label">Investiert</div><div class="meta-item-val">${fmtMoney(p.investedTotal)}</div></div>
         <div><div class="meta-item-label">Aktueller Wert</div><div class="meta-item-val">${fmtMoney(p.currentValue)}</div></div>
-        <div><div class="meta-item-label">G / V</div>
-          <div class="meta-item-val" style="color:${p.pnlAbsolute>=0?'var(--positive)':'var(--negative)'}">
-            ${fmtSign(p.pnlAbsolute)}
-          </div></div>
-        <div><div class="meta-item-label">Rendite</div>
-          <div class="meta-item-val" style="color:${p.pnlPercent>=0?'var(--positive)':'var(--negative)'}">
-            ${fmtPct(p.pnlPercent)}
-          </div></div>
+        <div><div class="meta-item-label">G / V</div><div class="meta-item-val" style="color:${p.pnlAbsolute >= 0 ? 'var(--positive)' : 'var(--negative)'}">${fmtSign(p.pnlAbsolute)}</div></div>
+        <div><div class="meta-item-label">Rendite</div><div class="meta-item-val" style="color:${p.pnlPercent >= 0 ? 'var(--positive)' : 'var(--negative)'}">${fmtPct(p.pnlPercent)}</div></div>
       </div>
     </div>
 
     <div class="card" style="margin-bottom:12px;">
       <div class="section-title" style="margin-bottom:10px;">Transaktionen (${p.txns.length})</div>
-      ${p.txns.map(t => txRow(t, p)).join('')}
+      ${p.txns.map(t => txRow(t)).join('')}
       <div style="height:4px;"></div>
       <button class="btn btn-danger" style="margin-top:8px;" onclick="confirmDeletePosition('${assetId}','${type}')">Position vollständig löschen</button>
     </div>`;
@@ -1237,37 +761,36 @@ async function renderDetail(assetId, type) {
         <div class="detail-icon" style="background:${a.bg};color:${a.color}">${a.icon}</div>
         <div>
           <div class="detail-name">${a.name}</div>
-          <div class="detail-sub">${a.sym} · ${type.toUpperCase()}${a.exch ? ' · '+a.exch : (a.provider ? ' · '+a.provider : '')}</div>
+          <div class="detail-sub">${a.sym} · ${type.toUpperCase()}${a.exch ? ' · ' + a.exch : (a.provider ? ' · ' + a.provider : '')}</div>
         </div>
       </div>
       ${priceBanner}
       <div class="detail-price">${priceStr}</div>
       <div style="margin-top:6px;">
-        <span class="hero-change ${chgCls}">${chg>=0?'↑':'↓'} ${Math.abs(chg).toFixed(2)}% (24h)</span>
+        <span class="hero-change ${chgCls}">${chg >= 0 ? '↑' : '↓'} ${Math.abs(chg).toFixed(2)}% (24h)</span>
         ${eff && eff.source !== 'manual' ? `<span style="font-size:10px;color:var(--text3);margin-left:8px;">${eff.source}</span>` : ''}
       </div>
     </div>
 
-    ${a.desc ? `<div class="card" style="margin-bottom:12px;"><p style="font-size:13px;color:var(--text2);line-height:1.6;">${a.desc}</p>${metaHtml ? '<div style="margin-top:10px;">'+metaHtml+'</div>' : ''}</div>` : ''}
+    ${a.desc ? `<div class="card" style="margin-bottom:12px;"><p style="font-size:13px;color:var(--text2);line-height:1.6;">${a.desc}</p>${metaHtml ? '<div style="margin-top:10px;">' + metaHtml + '</div>' : ''}</div>` : ''}
 
-    <!-- Chart Container -->
     <div id="detail-chart-area" style="margin-bottom:12px;"></div>
 
     ${ptfHtml}
   `;
 
-  // Load chart
   loadDetailChart(a, type, '1m');
 }
 
-function txRow(t, p) {
-  const units = t.mode === 'amount' ? (t.calculatedUnits||0) : (t.units||0);
-  const price = t.mode === 'amount' ? (t.unitPriceAtPurchase||0) : (t.unitPrice||0);
-  const invested = t.mode === 'amount' ? (t.investedAmount||0) : (units * price);
+function txRow(t) {
+  const units = t.mode === 'amount' ? (t.calculatedUnits || 0) : (t.units || 0);
+  const price = t.mode === 'amount' ? (t.unitPriceAtPurchase || 0) : (t.unitPrice || 0);
+  const invested = t.mode === 'amount' ? (t.investedAmount || 0) : (units * price);
+
   return `<div class="tx-row">
     <div>
       <div class="tx-date">${t.date} · ${t.mode === 'amount' ? 'FIXBETRAG' : 'STÜCK'}</div>
-      <div class="tx-detail">${units.toLocaleString('de-CH',{maximumFractionDigits:8})} × ${fmtMoney(price, t.currency, 2)}</div>
+      <div class="tx-detail">${units.toLocaleString('de-CH', { maximumFractionDigits: 8 })} × ${fmtMoney(price, t.currency, 2)}</div>
       ${t.notes ? `<div class="tx-date" style="margin-top:2px;">${t.notes}</div>` : ''}
     </div>
     <div style="text-align:right;">
@@ -1280,16 +803,15 @@ function txRow(t, p) {
   </div>`;
 }
 
-// ── DETAIL CHART ─────────────────────────────────────────────
 async function loadDetailChart(asset, type, range) {
   const area = document.getElementById('detail-chart-area');
   if (!area) return;
 
-  // Tab render
-  const tabs = ['7d','1m','6m','1y'].map(r => {
-    const lbl = {'7d':'7T','1m':'1M','6m':'6M','1y':'1J'}[r] || r.toUpperCase();
-    return `<button class="chart-tab ${r===range?'active':''}" onclick="loadDetailChart(window.__detailAsset,window.__detailType,'${r}')">${lbl}</button>`;
+  const tabs = ['7d', '1m', '6m', '1y'].map(r => {
+    const lbl = { '7d': '7T', '1m': '1M', '6m': '6M', '1y': '1J' }[r] || r.toUpperCase();
+    return `<button class="chart-tab ${r === range ? 'active' : ''}" onclick="loadDetailChart(window.__detailAsset,window.__detailType,'${r}')">${lbl}</button>`;
   }).join('');
+
   area.innerHTML = `<div class="chart-card">
     <div class="chart-tabs">${tabs}</div>
     <div class="chart-wrap" id="detail-chart-wrap">
@@ -1302,7 +824,7 @@ async function loadDetailChart(asset, type, range) {
   </div>`;
 
   window.__detailAsset = asset;
-  window.__detailType  = type;
+  window.__detailType = type;
 
   if (!API_BASE) {
     document.getElementById('detail-chart-loading').textContent = 'API nicht konfiguriert.';
@@ -1311,78 +833,94 @@ async function loadDetailChart(asset, type, range) {
 
   const data = await fetchHistory(asset.id, type, range);
   const loadEl = document.getElementById('detail-chart-loading');
-  const canvas  = document.getElementById('detail-chart-canvas');
-  const summEl  = document.getElementById('detail-chart-summary');
+  const canvas = document.getElementById('detail-chart-canvas');
+  const summEl = document.getElementById('detail-chart-summary');
 
   if (!data || !data.points || data.points.length < 2) {
     if (loadEl) {
-      if (type === 'metal') loadEl.innerHTML = 'ℹ Metal-Charts benötigen metals-api Paid-Tier.';
-      else if (type === 'etf') loadEl.innerHTML = 'ℹ ETF-Charts noch nicht verfügbar.';
+      if (type === 'metal') loadEl.innerHTML = 'ℹ Metal-Charts aktuell nicht verfügbar.';
+      else if (type === 'etf') loadEl.innerHTML = 'ℹ ETF-Charts aktuell nicht verfügbar.';
       else loadEl.innerHTML = `⚠ Keine historischen Daten für ${asset.sym} (${range})`;
     }
     return;
   }
 
-  if (loadEl) loadEl.style.display = 'none';
-  if (canvas)  canvas.style.display = 'block';
+  loadEl.style.display = 'none';
+  canvas.style.display = 'block';
 
   if (detailChart) detailChart.destroy();
 
   const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#7c6af5';
   const labels = data.points.map(pt => {
     const d = new Date(pt.date);
-    if (range === '7d') return d.toLocaleDateString('de-CH',{day:'2-digit',month:'short'}) + ' ' + String(d.getHours()).padStart(2,'0') + 'h';
-    return d.toLocaleDateString('de-CH',{day:'2-digit',month:'short',year:range==='1y'?'2-digit':undefined});
+    if (range === '7d') {
+      return d.toLocaleDateString('de-CH', { day: '2-digit', month: 'short' }) + ' ' + String(d.getHours()).padStart(2, '0') + 'h';
+    }
+    return d.toLocaleDateString('de-CH', { day: '2-digit', month: 'short', year: range === '1y' ? '2-digit' : undefined });
   });
+
   const values = data.points.map(pt => pt.price);
-  const first = values[0], last = values[values.length-1];
-  const chg = first > 0 ? ((last-first)/first*100) : 0;
+  const first = values[0];
+  const last = values[values.length - 1];
+  const chg = first > 0 ? ((last - first) / first * 100) : 0;
 
   detailChart = new Chart(canvas, {
-    type:'line',
-    data:{
+    type: 'line',
+    data: {
       labels,
-      datasets:[{
-        data:values,
+      datasets: [{
+        data: values,
         borderColor: primary,
         backgroundColor: ctx => {
-          const c = ctx.chart.ctx.createLinearGradient(0,0,0,180);
+          const c = ctx.chart.ctx.createLinearGradient(0, 0, 0, 180);
           c.addColorStop(0, hexToRgba(primary, 0.2));
           c.addColorStop(1, hexToRgba(primary, 0));
           return c;
         },
-        fill:true, tension:0.3, pointRadius:0, pointHoverRadius:4, borderWidth:2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        borderWidth: 2,
         pointHoverBackgroundColor: primary,
       }]
     },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{ backgroundColor:'#1e1e28', borderColor:'rgba(255,255,255,0.1)', borderWidth:1, titleColor:'#9090a8', bodyColor:'#f0f0f5', padding:10, displayColors:false,
-          callbacks:{ label: c => fmtMoney(c.parsed.y, data.currency || settings.currency, c.parsed.y < 10 ? 4 : 2) }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e1e28',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: '#9090a8',
+          bodyColor: '#f0f0f5',
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: c => fmtMoney(c.parsed.y, data.currency || settings.currency, c.parsed.y < 10 ? 4 : 2)
+          }
         }
       },
-      scales:{
-        x:{display:true, ticks:{color:'#5a5a72', font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:6}, grid:{display:false}},
-        y:{display:false}
+      scales: {
+        x: { display: true, ticks: { color: '#5a5a72', font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } },
+        y: { display: false }
       }
     }
   });
 
-  if (summEl) {
-    summEl.innerHTML = `<span>Start: ${fmtMoney(first, data.currency, first<10?4:2)}</span>
-      <span style="color:${chg>=0?'var(--positive)':'var(--negative)'};">${chg>=0?'↑ +':'↓ '}${Math.abs(chg).toFixed(2)}%</span>
-      <span>Heute: ${fmtMoney(last, data.currency, last<10?4:2)}</span>`;
-  }
+  summEl.innerHTML = `<span>Start: ${fmtMoney(first, data.currency || settings.currency, first < 10 ? 4 : 2)}</span>
+    <span style="color:${chg >= 0 ? 'var(--positive)' : 'var(--negative)'};">${chg >= 0 ? '↑ +' : '↓ '}${Math.abs(chg).toFixed(2)}%</span>
+    <span>Heute: ${fmtMoney(last, data.currency || settings.currency, last < 10 ? 4 : 2)}</span>`;
 }
 
-// ── MANUAL PRICE MODAL ───────────────────────────────────────
 function openManualModal(assetId) {
   const existing = manualPrices[assetId];
   const cached = priceCache[assetId];
   const suggestion = existing ? existing.price.toFixed(2) : (cached ? cached.price.toFixed(2) : '');
   const asset = allAssets().find(a => a.id === assetId);
+
   openModal(`
     <div class="modal-handle"></div>
     <div class="modal-title">${asset ? asset.sym : assetId} — Manueller Kurs</div>
@@ -1399,17 +937,23 @@ function openManualModal(assetId) {
       <button class="btn btn-primary btn-sm" style="flex:1;" onclick="saveManualAndClose('${assetId}')">Speichern</button>
     </div>
   `);
+
   setTimeout(() => document.getElementById('manual-price-input')?.focus(), 80);
 }
+
 function saveManualAndClose(assetId) {
   const v = parseFloat(document.getElementById('manual-price-input').value);
-  if (isNaN(v) || v <= 0) { showToast('Ungültiger Kurs', 'warn'); return; }
+  if (isNaN(v) || v <= 0) {
+    showToast('Ungültiger Kurs', 'warn');
+    return;
+  }
   setManualPrice(assetId, v);
   closeModal();
   showToast('Kurs gespeichert', 'ok');
   if (detailAsset && detailAsset.id === assetId) renderDetail(assetId, detailAsset.type);
   renderHome();
 }
+
 function clearManualAndClose(assetId) {
   clearManualPrice(assetId);
   closeModal();
@@ -1418,7 +962,6 @@ function clearManualAndClose(assetId) {
   renderHome();
 }
 
-// ── DELETE ───────────────────────────────────────────────────
 function deleteTransaction(txnId) {
   openModal(`
     <div class="modal-handle"></div>
@@ -1430,6 +973,7 @@ function deleteTransaction(txnId) {
     </div>
   `);
 }
+
 function doDeleteTxn(txnId) {
   transactions = transactions.filter(t => t.id !== txnId);
   saveTxns();
@@ -1438,6 +982,7 @@ function doDeleteTxn(txnId) {
   if (detailAsset) renderDetail(detailAsset.id, detailAsset.type);
   renderHome();
 }
+
 function confirmDeletePosition(assetId, type) {
   openModal(`
     <div class="modal-handle"></div>
@@ -1449,6 +994,7 @@ function confirmDeletePosition(assetId, type) {
     </div>
   `);
 }
+
 function doDeletePos(assetId, type) {
   transactions = transactions.filter(t => !(t.assetId === assetId && t.type === type));
   saveTxns();
@@ -1458,24 +1004,37 @@ function doDeletePos(assetId, type) {
   renderHome();
 }
 
-// ── ADD / EDIT FORM ──────────────────────────────────────────
-let addSearchTimeout = null;
-let addAssetResults  = [];
-
 function resetAddForm() {
-  addType = 'crypto'; addMode = 'units'; addAsset = null; editingId = null;
+  addType = 'crypto';
+  addMode = 'units';
+  addAsset = null;
+  editingId = null;
+
   document.getElementById('add-title').textContent = 'Position hinzufügen';
   document.getElementById('edit-bar').style.display = 'none';
   document.getElementById('add-save-btn').textContent = 'Position speichern';
-  ['crypto','stock','etf','metal'].forEach(t => document.getElementById('tbtn-'+t).classList.toggle('active', t==='crypto'));
+
+  ['crypto', 'stock', 'etf', 'metal'].forEach(t =>
+    document.getElementById('tbtn-' + t).classList.toggle('active', t === 'crypto')
+  );
+
   document.getElementById('mbtn-units').classList.add('active');
   document.getElementById('mbtn-amount').classList.remove('active');
   document.getElementById('fields-units').style.display = 'block';
   document.getElementById('fields-amount').style.display = 'none';
+
   document.getElementById('add-asset-input').value = '';
   document.getElementById('add-asset-results').style.display = 'none';
   document.getElementById('add-asset-selected').style.display = 'none';
-  document.getElementById('add-date').value = new Date().toISOString().slice(0,10);
+
+  const zurichToday = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Zurich',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
+
+  document.getElementById('add-date').value = zurichToday;
   document.getElementById('add-currency').value = settings.currency;
   document.getElementById('add-qty').value = '';
   document.getElementById('add-price').value = '';
@@ -1488,43 +1047,72 @@ function resetAddForm() {
 }
 
 function setAddType(type) {
-  addType = type; addAsset = null;
-  ['crypto','stock','etf','metal'].forEach(t => document.getElementById('tbtn-'+t).classList.toggle('active', t===type));
+  addType = type;
+  addAsset = null;
+  ['crypto', 'stock', 'etf', 'metal'].forEach(t => {
+    document.getElementById('tbtn-' + t).classList.toggle('active', t === type);
+  });
   document.getElementById('add-asset-input').value = '';
   document.getElementById('add-asset-selected').style.display = 'none';
   document.getElementById('add-asset-results').style.display = 'none';
 }
+
 function setAddMode(mode) {
   addMode = mode;
-  document.getElementById('mbtn-units').classList.toggle('active', mode==='units');
-  document.getElementById('mbtn-amount').classList.toggle('active', mode==='amount');
-  document.getElementById('fields-units').style.display = mode==='units' ? 'block' : 'none';
-  document.getElementById('fields-amount').style.display = mode==='amount' ? 'block' : 'none';
+  document.getElementById('mbtn-units').classList.toggle('active', mode === 'units');
+  document.getElementById('mbtn-amount').classList.toggle('active', mode === 'amount');
+  document.getElementById('fields-units').style.display = mode === 'units' ? 'block' : 'none';
+  document.getElementById('fields-amount').style.display = mode === 'amount' ? 'block' : 'none';
   onAmountInput();
 }
 
 function onAddAssetSearch() {
   clearTimeout(addSearchTimeout);
   const q = document.getElementById('add-asset-input').value.trim().toLowerCase();
-  if (q.length < 1) { document.getElementById('add-asset-results').style.display = 'none'; return; }
+
+  if (q.length < 1) {
+    document.getElementById('add-asset-results').style.display = 'none';
+    return;
+  }
+
   addSearchTimeout = setTimeout(() => {
     const list = (CATALOG[addType] || []).filter(a =>
-      a.sym.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) ||
-      (a.id && a.id.toLowerCase().includes(q)) || (a.desc && a.desc.toLowerCase().includes(q))
+      a.sym.toLowerCase().includes(q) ||
+      a.name.toLowerCase().includes(q) ||
+      (a.id && a.id.toLowerCase().includes(q)) ||
+      (a.desc && a.desc.toLowerCase().includes(q))
     ).slice(0, 10);
+
     addAssetResults = list;
     const el = document.getElementById('add-asset-results');
-    if (list.length === 0) { el.style.display = 'none'; return; }
+
+    if (list.length === 0) {
+      el.style.display = 'none';
+      return;
+    }
+
     el.style.display = 'block';
-    el.innerHTML = list.map((a,i) =>
-      `<div onmousedown="selectAddAsset(${i})" style="padding:10px 12px; cursor:pointer; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border);"
-        onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''">
+    el.innerHTML = list.map((a, i) => `
+      <div onmousedown="selectAddAsset(${i})"
+        style="padding:10px 12px; cursor:pointer; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border);"
+        onmouseover="this.style.background='var(--bg4)'"
+        onmouseout="this.style.background=''">
         <div class="pos-icon" style="width:30px;height:30px;font-size:12px;flex-shrink:0;background:${a.bg};color:${a.color}">${a.icon}</div>
-        <div><div style="font-size:13px;font-weight:600;">${a.sym}</div><div style="font-size:11px;color:var(--text3);">${a.name}</div></div>
-      </div>`).join('');
+        <div>
+          <div style="font-size:13px;font-weight:600;">${a.sym}</div>
+          <div style="font-size:11px;color:var(--text3);">${a.name}</div>
+        </div>
+      </div>
+    `).join('');
   }, 150);
 }
-function hideAddResults() { setTimeout(() => { document.getElementById('add-asset-results').style.display = 'none'; }, 200); }
+
+function hideAddResults() {
+  setTimeout(() => {
+    document.getElementById('add-asset-results').style.display = 'none';
+  }, 200);
+}
+
 function selectAddAsset(i) {
   addAsset = addAssetResults[i];
   document.getElementById('add-asset-input').value = '';
@@ -1536,6 +1124,7 @@ function selectAddAsset(i) {
   document.getElementById('add-asset-name').textContent = addAsset.name;
   document.getElementById('add-asset-sym').textContent = addAsset.sym + ' · ' + addType.toUpperCase();
 }
+
 function clearAddAsset() {
   addAsset = null;
   document.getElementById('add-asset-selected').style.display = 'none';
@@ -1545,36 +1134,55 @@ function clearAddAsset() {
 
 function onAmountInput() {
   if (addMode !== 'amount') return;
+
   const amount = parseFloat(document.getElementById('add-amount').value);
-  const price  = parseFloat(document.getElementById('add-histprice').value);
+  const price = parseFloat(document.getElementById('add-histprice').value);
   const prev = document.getElementById('add-calc-preview');
+
   if (!isNaN(amount) && amount > 0 && !isNaN(price) && price > 0) {
     const units = amount / price;
     prev.style.display = 'block';
-    prev.innerHTML = `<strong>Investiert:</strong> ${fmtMoney(amount, document.getElementById('add-currency').value)} &nbsp;·&nbsp; <strong>Kurs:</strong> ${fmtMoney(price, document.getElementById('add-currency').value, 2)} (manuell) &nbsp;·&nbsp; <strong>Einheiten:</strong> ${units.toLocaleString('de-CH',{maximumFractionDigits:8})}`;
-  } else { prev.style.display = 'none'; }
+    prev.innerHTML = `<strong>Investiert:</strong> ${fmtMoney(amount, document.getElementById('add-currency').value)} &nbsp;·&nbsp; <strong>Kurs:</strong> ${fmtMoney(price, document.getElementById('add-currency').value, 2)} &nbsp;·&nbsp; <strong>Einheiten:</strong> ${units.toLocaleString('de-CH', { maximumFractionDigits: 8 })}`;
+  } else {
+    prev.style.display = 'none';
+  }
 }
 
 async function saveTransaction() {
-  if (!addAsset) { showToast('Bitte ein Asset auswählen', 'warn'); return; }
+  if (!addAsset) {
+    showToast('Bitte ein Asset auswählen', 'warn');
+    return;
+  }
 
-  const date     = document.getElementById('add-date').value;
+  const date = document.getElementById('add-date').value;
   const currency = document.getElementById('add-currency').value;
-  const fees     = parseFloat(document.getElementById('add-fees').value) || 0;
-  const notes    = document.getElementById('add-notes').value.trim();
+  const fees = parseFloat(document.getElementById('add-fees').value) || 0;
+  const notes = document.getElementById('add-notes').value.trim();
 
   let txnData;
 
   if (addMode === 'units') {
-    const qty   = parseFloat(document.getElementById('add-qty').value);
+    const qty = parseFloat(document.getElementById('add-qty').value);
     const price = parseFloat(document.getElementById('add-price').value);
-    if (isNaN(qty) || qty <= 0)   { showToast('Stückzahl fehlt', 'warn'); return; }
-    if (isNaN(price) || price <= 0) { showToast('Preis fehlt', 'warn'); return; }
-    txnData = { mode:'units', units:qty, unitPrice:price };
+
+    if (isNaN(qty) || qty <= 0) {
+      showToast('Stückzahl fehlt', 'warn');
+      return;
+    }
+    if (isNaN(price) || price <= 0) {
+      showToast('Preis fehlt', 'warn');
+      return;
+    }
+
+    txnData = { mode: 'units', units: qty, unitPrice: price };
   } else {
     const amount = parseFloat(document.getElementById('add-amount').value);
     let histPrice = parseFloat(document.getElementById('add-histprice').value);
-    if (isNaN(amount) || amount <= 0) { showToast('Betrag fehlt', 'warn'); return; }
+
+    if (isNaN(amount) || amount <= 0) {
+      showToast('Betrag fehlt', 'warn');
+      return;
+    }
 
     const btn = document.getElementById('add-save-btn');
 
@@ -1583,35 +1191,51 @@ async function saveTransaction() {
       histPrice = await fetchHistoryByDate(addAsset.id, addType, date);
       btn.textContent = editingId ? 'Änderungen speichern' : 'Position speichern';
     }
+
     if (!histPrice || histPrice <= 0) {
       document.getElementById('add-histprice-hint').innerHTML = '<span style="color:var(--negative);">Kurs nicht verfügbar — bitte manuell eingeben.</span>';
       showToast('Historischer Kurs nicht verfügbar — bitte manuell eingeben', 'warn');
       return;
     }
+
     const calculatedUnits = amount / histPrice;
     document.getElementById('add-histprice').value = histPrice.toFixed(8);
     document.getElementById('add-histprice-hint').textContent = `Auto-Kurs von ${date}: ${fmtMoney(histPrice, currency, 2)}`;
 
-    txnData = { mode:'amount', investedAmount:amount, unitPriceAtPurchase:histPrice, calculatedUnits };
+    txnData = { mode: 'amount', investedAmount: amount, unitPriceAtPurchase: histPrice, calculatedUnits };
   }
 
-  const full = { ...txnData, assetId: addAsset.id, type: addType, date, currency, fees, notes };
+  const full = {
+    ...txnData,
+    assetId: addAsset.id,
+    type: addType,
+    date,
+    currency,
+    fees,
+    notes
+  };
+
+  const wasEditing = !!editingId;
 
   if (editingId) {
     const idx = transactions.findIndex(t => t.id === editingId);
-    if (idx !== -1) transactions[idx] = { ...transactions[idx], ...full };
-    else transactions.push({ id: 'tx_' + Date.now(), ...full });
+    if (idx !== -1) {
+      transactions[idx] = { ...transactions[idx], ...full };
+    } else {
+      transactions.push({ id: 'tx_' + Date.now(), ...full });
+    }
     editingId = null;
   } else {
     transactions.push({ id: 'tx_' + Date.now(), ...full });
   }
 
   saveTxns();
-  showToast(editingId ? 'Änderungen gespeichert' : 'Position gespeichert', 'ok');
 
-  // Auto-fetch quote if we have API
-  if (API_BASE) await fetchQuote(addAsset.id, addType);
+  if (API_BASE) {
+    await fetchQuote(addAsset.id, addType);
+  }
 
+  showToast(wasEditing ? 'Änderungen gespeichert' : 'Position gespeichert', 'ok');
   renderHome();
   showScreen('home');
 }
@@ -1622,22 +1246,26 @@ function editTransaction(txnId) {
 
   editingId = txnId;
   const asset = findAsset(t.assetId, t.type);
-  if (!asset) { showToast('Asset nicht gefunden', 'warn'); return; }
+  if (!asset) {
+    showToast('Asset nicht gefunden', 'warn');
+    return;
+  }
 
-  addType  = t.type;
+  addType = t.type;
   addAsset = asset;
-  addMode  = t.mode;
+  addMode = t.mode;
 
   showScreen('add');
 
-  // Defer fill after DOM settles
   setTimeout(() => {
-    ['crypto','stock','etf','metal'].forEach(tp => document.getElementById('tbtn-'+tp).classList.toggle('active', tp===t.type));
+    ['crypto', 'stock', 'etf', 'metal'].forEach(tp => {
+      document.getElementById('tbtn-' + tp).classList.toggle('active', tp === t.type);
+    });
+
     document.getElementById('add-title').textContent = 'Transaktion bearbeiten';
     document.getElementById('edit-bar').style.display = 'flex';
     document.getElementById('add-save-btn').textContent = 'Änderungen speichern';
 
-    // Show selected asset
     document.getElementById('add-asset-selected').style.display = 'block';
     document.getElementById('add-asset-icon').style.background = asset.bg;
     document.getElementById('add-asset-icon').style.color = asset.color;
@@ -1661,6 +1289,7 @@ function editTransaction(txnId) {
     }
   }, 50);
 }
+
 function cancelEdit() {
   editingId = null;
   resetAddForm();
@@ -1668,12 +1297,16 @@ function cancelEdit() {
 }
 
 function preSelectAsset(assetId, type) {
-  addType  = type;
+  addType = type;
   addAsset = findAsset(assetId, type);
   editingId = null;
   showScreen('add');
+
   setTimeout(() => {
-    ['crypto','stock','etf','metal'].forEach(tp => document.getElementById('tbtn-'+tp).classList.toggle('active', tp===type));
+    ['crypto', 'stock', 'etf', 'metal'].forEach(tp => {
+      document.getElementById('tbtn-' + tp).classList.toggle('active', tp === type);
+    });
+
     if (addAsset) {
       document.getElementById('add-asset-selected').style.display = 'block';
       document.getElementById('add-asset-icon').style.background = addAsset.bg;
@@ -1685,24 +1318,30 @@ function preSelectAsset(assetId, type) {
   }, 50);
 }
 
-// ── MARKETS ──────────────────────────────────────────────────
 function setMarketFilter(f, btn) {
   marketFilter = f;
   document.querySelectorAll('.filter-btn[data-mf]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderMarkets();
 }
+
 function renderMarkets() {
   const q = (document.getElementById('markets-input')?.value || '').trim().toLowerCase();
   let list = allAssets();
-  if (marketFilter !== 'all') list = list.filter(a => a.type === marketFilter);
-  if (q) list = list.filter(a =>
-    a.sym.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) ||
-    (a.id && a.id.toLowerCase().includes(q)) || (a.desc && a.desc.toLowerCase().includes(q)) ||
-    (a.exch && a.exch.toLowerCase().includes(q)) || (a.provider && a.provider.toLowerCase().includes(q))
-  );
-  list.sort((a,b) => a.name.localeCompare(b.name, 'de'));
 
+  if (marketFilter !== 'all') list = list.filter(a => a.type === marketFilter);
+  if (q) {
+    list = list.filter(a =>
+      a.sym.toLowerCase().includes(q) ||
+      a.name.toLowerCase().includes(q) ||
+      (a.id && a.id.toLowerCase().includes(q)) ||
+      (a.desc && a.desc.toLowerCase().includes(q)) ||
+      (a.exch && a.exch.toLowerCase().includes(q)) ||
+      (a.provider && a.provider.toLowerCase().includes(q))
+    );
+  }
+
+  list.sort((a, b) => a.name.localeCompare(b.name, 'de'));
   document.getElementById('markets-count').textContent = `${list.length} Assets`;
 
   const el = document.getElementById('markets-list');
@@ -1711,7 +1350,6 @@ function renderMarkets() {
     return;
   }
 
-  // Group by first letter
   const groups = {};
   list.forEach(a => {
     const l = a.name.charAt(0).toUpperCase();
@@ -1734,10 +1372,12 @@ function marketRow(a) {
   const priceHtml = eff
     ? `<div class="pos-right">
         <div class="pos-val">${fmtMoney(eff.price, settings.currency, eff.price < 1 ? 6 : eff.price < 10 ? 4 : 2)}</div>
-        ${eff.change24h ? `<div class="pos-chg ${eff.change24h>=0?'up':'down'}">${fmtPct(eff.change24h)}</div>` : ''}
-       </div>`
+        ${eff.change24h ? `<div class="pos-chg ${eff.change24h >= 0 ? 'up' : 'down'}">${fmtPct(eff.change24h)}</div>` : ''}
+      </div>`
     : '';
+
   const sub = a.exch || a.provider || a.cat || a.unit || '';
+
   return `<div class="pos-row" onclick="openDetail('${a.id}','${a.type}')">
     <div class="pos-icon" style="background:${a.bg};color:${a.color}">${a.icon}</div>
     <div class="pos-info">
@@ -1745,13 +1385,12 @@ function marketRow(a) {
         <span class="pos-ticker">${a.sym}</span>
         <span class="tag ${a.type}">${a.type.toUpperCase()}</span>
       </div>
-      <div class="pos-name">${a.name}${sub?' · '+sub:''}</div>
+      <div class="pos-name">${a.name}${sub ? ' · ' + sub : ''}</div>
     </div>
     ${priceHtml}
   </div>`;
 }
 
-// ── SETTINGS ─────────────────────────────────────────────────
 function initSettings() {
   document.getElementById('set-currency').value = settings.currency;
   document.getElementById('set-api').value = API_BASE;
@@ -1759,31 +1398,36 @@ function initSettings() {
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
   document.getElementById('set-color').value = rgbToHex(accent) || '#7c6af5';
 }
+
 function changeCurrency(cur) {
   settings.currency = cur;
   saveSettings();
   renderHome();
+  renderPortfolio();
+  if (detailAsset) renderDetail(detailAsset.id, detailAsset.type);
 }
+
 function changeAccent(hex) {
   document.documentElement.style.setProperty('--primary', hex);
-  // Adjust soft variant
   document.documentElement.style.setProperty('--primary-soft', hexToRgba(hex, 0.15));
   document.documentElement.style.setProperty('--primary-hover', lighten(hex));
 }
+
 function rgbToHex(color) {
   if (!color) return '#7c6af5';
   if (color.startsWith('#')) return color;
   const m = color.match(/\d+/g);
   if (!m) return '#7c6af5';
-  return '#' + m.slice(0,3).map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
+  return '#' + m.slice(0, 3).map(x => parseInt(x, 10).toString(16).padStart(2, '0')).join('');
 }
+
 function lighten(hex) {
-  // Simple lighten: increase each channel towards 255
-  const r = Math.min(255, parseInt(hex.slice(1,3),16)+40);
-  const g = Math.min(255, parseInt(hex.slice(3,5),16)+40);
-  const b = Math.min(255, parseInt(hex.slice(5,7),16)+40);
-  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 40);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 40);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 40);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
+
 function confirmClearAll() {
   openModal(`
     <div class="modal-handle"></div>
@@ -1795,21 +1439,30 @@ function confirmClearAll() {
     </div>
   `);
 }
+
 function doClearAll() {
-  transactions = []; manualPrices = {}; priceCache = {}; histCache = {};
-  saveTxns(); saveManual(); savePCache(); saveHCache();
+  transactions = [];
+  manualPrices = {};
+  priceCache = {};
+  histCache = {};
+  saveTxns();
+  saveManual();
+  savePCache();
+  saveHCache();
   closeModal();
   showToast('Alle Daten gelöscht', 'ok');
   showScreen('home');
 }
 
-// ── MODAL / TOAST ────────────────────────────────────────────
 function openModal(html) {
   document.getElementById('modal-body').innerHTML = html;
   document.getElementById('modal').classList.add('open');
 }
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
-let toastTimer;
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
 function showToast(msg, type) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -1819,15 +1472,11 @@ function showToast(msg, type) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-// ── INIT ─────────────────────────────────────────────────────
 load();
 renderHome();
 renderMarkets();
 
-// Auto-refresh if API configured
 if (API_BASE && transactions.length > 0) {
   setTimeout(refreshPrices, 500);
 }
 </script>
-</body>
-</html>
