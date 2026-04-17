@@ -1472,9 +1472,11 @@ function showToast(msg, type) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-load();
-renderHome();
-renderMarkets();
+window.addEventListener('DOMContentLoaded', () => {
+  load();
+  renderHome();
+  renderMarkets();
+});
 
 if (API_BASE && transactions.length > 0) {
   setTimeout(refreshPrices, 500);
