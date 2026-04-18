@@ -6,15 +6,15 @@
   <title>Vaultis</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
-    :root {
+    :root{
       --bg:#0a0a0f;
       --bg2:#111118;
       --bg3:#18181f;
-      --bg4:#1f1f29;
+      --bg4:#20202a;
       --border:rgba(255,255,255,0.08);
       --text:#f0f0f5;
-      --text2:#9a9ab0;
-      --text3:#606078;
+      --text2:#a0a0b8;
+      --text3:#66667d;
       --primary:#7c6af5;
       --primary-soft:rgba(124,106,245,0.15);
       --positive:#2ecc8f;
@@ -24,52 +24,60 @@
       --radius-sm:10px;
     }
 
-    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-
-    body {
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{
       background:var(--bg);
       color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
       min-height:100vh;
     }
 
-    .app {
+    .app{
       max-width:480px;
       margin:0 auto;
       min-height:100vh;
       padding:20px 16px 100px;
     }
 
-    .screen { display:none; }
-    .screen.active { display:block; }
+    .screen{display:none}
+    .screen.active{display:block}
 
-    .page-title { font-size:28px; font-weight:700; margin-bottom:4px; }
-    .page-sub { font-size:12px; color:var(--text3); margin-bottom:18px; }
+    .page-title{
+      font-size:28px;
+      font-weight:700;
+      margin-bottom:4px;
+    }
 
-    .hero, .card {
-      background:linear-gradient(135deg, var(--bg2), var(--bg3));
+    .page-sub{
+      font-size:12px;
+      color:var(--text3);
+      margin-bottom:18px;
+    }
+
+    .hero,.card{
+      background:linear-gradient(135deg,var(--bg2),var(--bg3));
       border:1px solid var(--border);
       border-radius:var(--radius);
       padding:16px;
       margin-bottom:14px;
     }
 
-    .hero-label {
+    .hero-label{
       font-size:11px;
       color:var(--text3);
       text-transform:uppercase;
-      letter-spacing:0.4px;
+      letter-spacing:.4px;
       margin-bottom:6px;
     }
 
-    .hero-value {
+    .hero-value{
       font-size:34px;
       font-weight:700;
       line-height:1.05;
       margin-bottom:8px;
     }
 
-    .hero-change {
+    .hero-change{
       display:inline-flex;
       align-items:center;
       gap:6px;
@@ -77,79 +85,84 @@
       font-weight:600;
       padding:4px 10px;
       border-radius:999px;
-      margin-bottom:14px;
       background:var(--bg4);
       color:var(--text3);
+      margin-bottom:14px;
     }
 
-    .hero-change.up { color:var(--positive); background:rgba(46,204,143,0.12); }
-    .hero-change.down { color:var(--negative); background:rgba(240,85,106,0.12); }
+    .hero-change.up{background:rgba(46,204,143,.12);color:var(--positive)}
+    .hero-change.down{background:rgba(240,85,106,.12);color:var(--negative)}
 
-    .stats-grid {
+    .stats-grid{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:12px;
-      padding-top:14px;
       border-top:1px solid var(--border);
+      padding-top:14px;
     }
 
-    .stat-label {
+    .stat-label{
       font-size:10px;
       color:var(--text3);
       text-transform:uppercase;
-      letter-spacing:0.4px;
+      letter-spacing:.4px;
       margin-bottom:4px;
     }
 
-    .stat-val {
+    .stat-val{
       font-size:15px;
       font-weight:600;
     }
 
-    .section-head {
+    .muted{color:var(--text3)}
+    .up{color:var(--positive)}
+    .down{color:var(--negative)}
+
+    .section-head{
       display:flex;
       justify-content:space-between;
       align-items:center;
       margin:18px 0 10px;
     }
 
-    .section-title {
+    .section-title{
       font-size:14px;
       font-weight:700;
     }
 
-    .btn {
+    .btn{
+      width:100%;
       border:none;
       border-radius:var(--radius-sm);
       padding:12px 14px;
       font-size:14px;
       font-weight:600;
       cursor:pointer;
-      width:100%;
     }
 
-    .btn-primary { background:var(--primary); color:#fff; }
-    .btn-ghost { background:transparent; color:var(--text2); border:1px solid var(--border); }
-    .btn-danger { background:rgba(240,85,106,0.12); color:var(--negative); border:1px solid rgba(240,85,106,0.2); }
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+    .btn-danger{background:rgba(240,85,106,.12);color:var(--negative);border:1px solid rgba(240,85,106,.22)}
 
-    .btn-inline {
+    .btn-inline{
       width:auto;
       padding:8px 12px;
-      font-size:12px;
-      background:var(--bg3);
-      color:var(--text2);
-      border:1px solid var(--border);
       border-radius:8px;
+      background:var(--bg3);
+      border:1px solid var(--border);
+      color:var(--text2);
+      font-size:12px;
+      cursor:pointer;
     }
 
-    .row-list {
+    .row-list{
       background:var(--bg2);
       border:1px solid var(--border);
       border-radius:var(--radius);
       overflow:hidden;
     }
 
-    .row {
+    .row{
       display:flex;
       align-items:center;
       gap:12px;
@@ -158,9 +171,9 @@
       cursor:pointer;
     }
 
-    .row:last-child { border-bottom:none; }
+    .row:last-child{border-bottom:none}
 
-    .icon {
+    .icon{
       width:40px;
       height:40px;
       border-radius:50%;
@@ -171,15 +184,15 @@
       flex-shrink:0;
     }
 
-    .grow { flex:1; min-width:0; }
+    .grow{flex:1;min-width:0}
 
-    .name {
+    .name{
       font-size:14px;
       font-weight:700;
       margin-bottom:2px;
     }
 
-    .sub {
+    .sub{
       font-size:11px;
       color:var(--text3);
       white-space:nowrap;
@@ -187,18 +200,13 @@
       text-overflow:ellipsis;
     }
 
-    .right { text-align:right; }
-    .right .main { font-size:14px; font-weight:600; }
-    .right .minor { font-size:11px; }
+    .right{text-align:right}
+    .right .main{font-size:14px;font-weight:600}
+    .right .minor{font-size:11px}
 
-    .up { color:var(--positive); }
-    .down { color:var(--negative); }
-    .muted { color:var(--text3); }
-
-    .tag {
+    .tag{
       display:inline-flex;
       align-items:center;
-      gap:4px;
       padding:2px 7px;
       border-radius:999px;
       font-size:10px;
@@ -208,10 +216,10 @@
       color:var(--text2);
     }
 
-    .banner {
-      background:rgba(240,192,96,0.12);
+    .banner{
+      background:rgba(240,192,96,.12);
       color:var(--gold);
-      border:1px solid rgba(240,192,96,0.18);
+      border:1px solid rgba(240,192,96,.18);
       border-radius:var(--radius-sm);
       padding:10px 12px;
       font-size:12px;
@@ -219,10 +227,10 @@
       margin-bottom:12px;
     }
 
-    .error-box {
-      background:rgba(240,85,106,0.12);
+    .error-box{
+      background:rgba(240,85,106,.12);
       color:var(--negative);
-      border:1px solid rgba(240,85,106,0.18);
+      border:1px solid rgba(240,85,106,.18);
       border-radius:var(--radius-sm);
       padding:12px;
       font-size:12px;
@@ -231,7 +239,7 @@
       white-space:pre-wrap;
     }
 
-    .input, .select {
+    .input,.select{
       width:100%;
       background:var(--bg3);
       color:var(--text);
@@ -242,26 +250,26 @@
       outline:none;
     }
 
-    .input:focus, .select:focus { border-color:var(--primary); }
+    .input:focus,.select:focus{border-color:var(--primary)}
 
-    .label {
+    .label{
       display:block;
       font-size:11px;
       color:var(--text3);
       margin-bottom:6px;
       text-transform:uppercase;
-      letter-spacing:0.35px;
+      letter-spacing:.35px;
     }
 
-    .field { margin-bottom:14px; }
+    .field{margin-bottom:14px}
 
-    .grid-2 {
+    .grid-2{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:10px;
     }
 
-    .toggle-row, .filter-row {
+    .toggle-row,.filter-row{
       display:flex;
       gap:8px;
       margin-bottom:14px;
@@ -269,9 +277,9 @@
       scrollbar-width:none;
     }
 
-    .toggle-row::-webkit-scrollbar, .filter-row::-webkit-scrollbar { display:none; }
+    .toggle-row::-webkit-scrollbar,.filter-row::-webkit-scrollbar{display:none}
 
-    .toggle-btn, .filter-btn {
+    .toggle-btn,.filter-btn{
       flex:1;
       min-width:max-content;
       border:1px solid var(--border);
@@ -284,22 +292,15 @@
       cursor:pointer;
     }
 
-    .toggle-btn.active, .filter-btn.active {
+    .toggle-btn.active,.filter-btn.active{
       background:var(--primary-soft);
       border-color:var(--primary);
       color:#c8c0ff;
     }
 
-    .search-box {
-      position:relative;
-      margin-bottom:10px;
-    }
-
-    .search-box .input {
-      padding-left:38px;
-    }
-
-    .search-icon {
+    .search-box{position:relative;margin-bottom:10px}
+    .search-box .input{padding-left:38px}
+    .search-icon{
       position:absolute;
       left:12px;
       top:50%;
@@ -308,18 +309,18 @@
       pointer-events:none;
     }
 
-    .results {
+    .results{
+      display:none;
       background:var(--bg3);
       border:1px solid var(--border);
       border-radius:10px;
       margin-top:6px;
       overflow:hidden;
-      display:none;
       max-height:220px;
       overflow-y:auto;
     }
 
-    .result-item {
+    .result-item{
       padding:10px 12px;
       display:flex;
       gap:10px;
@@ -328,9 +329,9 @@
       cursor:pointer;
     }
 
-    .result-item:last-child { border-bottom:none; }
+    .result-item:last-child{border-bottom:none}
 
-    .selected-asset {
+    .selected-asset{
       display:none;
       margin-top:8px;
       background:var(--bg3);
@@ -341,7 +342,7 @@
       gap:10px;
     }
 
-    .chart-card {
+    .chart-card{
       background:var(--bg2);
       border:1px solid var(--border);
       border-radius:var(--radius);
@@ -349,13 +350,13 @@
       margin-bottom:14px;
     }
 
-    .chart-tabs {
+    .chart-tabs{
       display:flex;
       gap:6px;
       margin-bottom:12px;
     }
 
-    .chart-tab {
+    .chart-tab{
       flex:1;
       background:var(--bg3);
       border:1px solid var(--border);
@@ -366,28 +367,28 @@
       cursor:pointer;
     }
 
-    .chart-tab.active {
+    .chart-tab.active{
       background:var(--primary-soft);
       border-color:var(--primary);
       color:#c8c0ff;
     }
 
-    .chart-wrap {
+    .chart-wrap{
       height:180px;
       position:relative;
     }
 
-    .chart-summary {
+    .chart-summary{
       display:flex;
       justify-content:space-between;
       gap:8px;
+      flex-wrap:wrap;
       font-size:11px;
       color:var(--text3);
       margin-top:10px;
-      flex-wrap:wrap;
     }
 
-    .bottom-nav {
+    .bottom-nav{
       position:fixed;
       bottom:0;
       left:50%;
@@ -401,7 +402,7 @@
       z-index:50;
     }
 
-    .nav-btn {
+    .nav-btn{
       flex:1;
       background:none;
       border:none;
@@ -414,9 +415,9 @@
       cursor:pointer;
     }
 
-    .nav-btn.active { color:#c8c0ff; }
+    .nav-btn.active{color:#c8c0ff}
 
-    .nav-fab {
+    .nav-fab{
       width:48px;
       height:48px;
       border-radius:50%;
@@ -425,18 +426,18 @@
       color:#fff;
       font-size:24px;
       margin-top:-18px;
-      box-shadow:0 8px 20px rgba(124,106,245,0.35);
+      box-shadow:0 8px 20px rgba(124,106,245,.35);
       cursor:pointer;
       flex:0 0 auto;
     }
 
-    .empty {
+    .empty{
       text-align:center;
       color:var(--text3);
       padding:40px 16px;
     }
 
-    .toast {
+    .toast{
       position:fixed;
       bottom:92px;
       left:50%;
@@ -454,21 +455,21 @@
       z-index:100;
     }
 
-    .toast.show { opacity:1; }
+    .toast.show{opacity:1}
 
-    .modal-overlay {
+    .modal-overlay{
       position:fixed;
       inset:0;
-      background:rgba(0,0,0,0.72);
+      background:rgba(0,0,0,.72);
       display:none;
       align-items:flex-end;
       justify-content:center;
       z-index:120;
     }
 
-    .modal-overlay.open { display:flex; }
+    .modal-overlay.open{display:flex}
 
-    .modal {
+    .modal{
       width:100%;
       max-width:480px;
       background:var(--bg2);
@@ -478,17 +479,17 @@
       overflow:auto;
     }
 
-    .modal-title {
+    .modal-title{
       text-align:center;
       font-size:17px;
       font-weight:700;
       margin-bottom:14px;
     }
 
-    .spinner {
+    .spinner{
       width:16px;
       height:16px;
-      border:2px solid rgba(255,255,255,0.12);
+      border:2px solid rgba(255,255,255,.12);
       border-top-color:var(--primary);
       border-radius:50%;
       display:inline-block;
@@ -496,7 +497,7 @@
       vertical-align:middle;
     }
 
-    @keyframes spin { to { transform:rotate(360deg); } }
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
@@ -668,7 +669,7 @@
         <input class="input" id="markets-input" placeholder="Suchen" oninput="renderMarkets()">
       </div>
 
-      <div class="filter-row">
+      <div class="filter-row" id="markets-filter-row">
         <button class="filter-btn active" onclick="setMarketFilter('all', this)">Alle</button>
         <button class="filter-btn" onclick="setMarketFilter('crypto', this)">Crypto</button>
         <button class="filter-btn" onclick="setMarketFilter('stock', this)">Aktien</button>
@@ -737,11 +738,44 @@
     let API_BASE = localStorage.getItem('vaultis_api_base') || API_BASE_DEFAULT;
 
     const STORAGE = {
-      TXNS: 'vaultis_recovery_txns',
-      MANUAL: 'vaultis_recovery_manual',
-      PCACHE: 'vaultis_recovery_pcache',
-      HCACHE: 'vaultis_recovery_hcache',
-      SETTINGS: 'vaultis_recovery_settings'
+      TXNS: 'vaultis_final_txns',
+      MANUAL: 'vaultis_final_manual',
+      PCACHE: 'vaultis_final_pcache',
+      HCACHE: 'vaultis_final_hcache',
+      SETTINGS: 'vaultis_final_settings'
+    };
+
+    const CATALOG = {
+      crypto: [
+        { id:'bitcoin', sym:'BTC', name:'Bitcoin', icon:'₿', color:'#f7931a', bg:'rgba(247,147,26,0.15)', cat:'Layer 1', desc:'Die bekannteste Kryptowaehrung.' },
+        { id:'ethereum', sym:'ETH', name:'Ethereum', icon:'Ξ', color:'#627eea', bg:'rgba(98,126,234,0.15)', cat:'Layer 1', desc:'Smart-Contract-Blockchain.' },
+        { id:'solana', sym:'SOL', name:'Solana', icon:'◎', color:'#9945ff', bg:'rgba(153,69,255,0.15)', cat:'Layer 1', desc:'Schnelle Layer-1-Blockchain.' },
+        { id:'ripple', sym:'XRP', name:'XRP', icon:'✕', color:'#346aa9', bg:'rgba(52,106,169,0.15)', cat:'Payments', desc:'Zahlungsnetzwerk fuer schnelle Transfers.' },
+        { id:'cardano', sym:'ADA', name:'Cardano', icon:'⚙', color:'#0033ad', bg:'rgba(0,51,173,0.15)', cat:'Layer 1', desc:'Proof-of-Stake-Blockchain.' },
+        { id:'binancecoin', sym:'BNB', name:'BNB', icon:'B', color:'#f3ba2f', bg:'rgba(243,186,47,0.15)', cat:'Exchange', desc:'Token des Binance-Oekosystems.' },
+        { id:'dogecoin', sym:'DOGE', name:'Dogecoin', icon:'Ð', color:'#c2a633', bg:'rgba(194,166,51,0.15)', cat:'Meme', desc:'Meme-Coin.' }
+      ],
+      stock: [
+        { id:'AAPL', sym:'AAPL', name:'Apple Inc.', icon:'A', color:'#555', bg:'rgba(85,85,85,0.15)', exch:'NASDAQ', sect:'Technology', country:'USA', desc:'iPhone, Mac, Services.' },
+        { id:'MSFT', sym:'MSFT', name:'Microsoft Corporation', icon:'M', color:'#00bcf2', bg:'rgba(0,188,242,0.15)', exch:'NASDAQ', sect:'Technology', country:'USA', desc:'Software, Cloud, Office.' },
+        { id:'NVDA', sym:'NVDA', name:'NVIDIA Corporation', icon:'N', color:'#76b900', bg:'rgba(118,185,0,0.15)', exch:'NASDAQ', sect:'Technology', country:'USA', desc:'KI- und GPU-Chips.' },
+        { id:'AMZN', sym:'AMZN', name:'Amazon.com Inc.', icon:'A', color:'#ff9900', bg:'rgba(255,153,0,0.15)', exch:'NASDAQ', sect:'Consumer Disc.', country:'USA', desc:'E-Commerce und AWS.' },
+        { id:'GOOGL', sym:'GOOGL', name:'Alphabet Inc.', icon:'G', color:'#4285f4', bg:'rgba(66,133,244,0.15)', exch:'NASDAQ', sect:'Communication', country:'USA', desc:'Google, YouTube, Cloud.' },
+        { id:'META', sym:'META', name:'Meta Platforms Inc.', icon:'M', color:'#1877f2', bg:'rgba(24,119,242,0.15)', exch:'NASDAQ', sect:'Communication', country:'USA', desc:'Facebook, Instagram, WhatsApp.' },
+        { id:'TSLA', sym:'TSLA', name:'Tesla Inc.', icon:'T', color:'#cc0000', bg:'rgba(204,0,0,0.15)', exch:'NASDAQ', sect:'Consumer Disc.', country:'USA', desc:'Elektrofahrzeuge und Energie.' },
+        { id:'ABBN', sym:'ABBN', name:'ABB Ltd', icon:'A', color:'#e4002b', bg:'rgba(228,0,43,0.15)', exch:'SIX', sect:'Industrials', country:'CHE', desc:'Schweizer Technologiekonzern.' },
+        { id:'NESN', sym:'NESN', name:'Nestle S.A.', icon:'N', color:'#d4a017', bg:'rgba(212,160,23,0.15)', exch:'SIX', sect:'Consumer Staples', country:'CHE', desc:'Nahrungsmittelkonzern.' },
+        { id:'NOVN', sym:'NOVN', name:'Novartis AG', icon:'N', color:'#0460a9', bg:'rgba(4,96,169,0.15)', exch:'SIX', sect:'Healthcare', country:'CHE', desc:'Pharmaunternehmen.' }
+      ],
+      etf: [
+        { id:'VWRL', sym:'VWRL', name:'Vanguard FTSE All-World ETF', icon:'V', color:'#941b2f', bg:'rgba(148,27,47,0.15)', provider:'Vanguard', isin:'IE00B3RBWM25', ter:'0.22%', dist:'Ausschuettend', desc:'Weltaktien-ETF.' },
+        { id:'CSPX', sym:'CSPX', name:'iShares Core S&P 500 ETF', icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares', isin:'IE00B5BMR087', ter:'0.07%', dist:'Thesaurierend', desc:'S&P-500-ETF.' },
+        { id:'IWDA', sym:'IWDA', name:'iShares Core MSCI World ETF', icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares', isin:'IE00B4L5Y983', ter:'0.20%', dist:'Thesaurierend', desc:'MSCI World ETF.' }
+      ],
+      metal: [
+        { id:'gold', sym:'XAU', name:'Gold', icon:'Au', color:'#fbbf24', bg:'rgba(251,191,36,0.15)', unit:'Unze (oz)', desc:'Edelmetall.' },
+        { id:'silver', sym:'XAG', name:'Silber', icon:'Ag', color:'#c0c4cc', bg:'rgba(192,196,204,0.15)', unit:'Unze (oz)', desc:'Edelmetall und Industriemetall.' }
+      ]
     };
 
     let transactions = [];
@@ -758,7 +792,6 @@
     let prevScreen = 'home';
     let currentScreen = 'home';
     let detailChart = null;
-    let allocChart = null;
     let addSearchTimeout = null;
     let addAssetResults = [];
     let toastTimer = null;
@@ -792,13 +825,12 @@
       setText('set-api-status', `Gespeichert: ${API_BASE}`);
     }
 
-    function findAsset(id, type) {
-      const list = CATALOG[type] || [];
-      return list.find(a => a.id === id) || null;
-    }
-
     function allAssets() {
       return Object.entries(CATALOG).flatMap(([type, list]) => list.map(a => ({ ...a, type })));
+    }
+
+    function findAsset(id, type) {
+      return (CATALOG[type] || []).find(a => a.id === id) || null;
     }
 
     function fmtMoney(n, currency = settings.currency, decimals = 2) {
@@ -938,9 +970,7 @@
 
         for (const pt of data.points) {
           const d = String(pt.date).slice(0, 10);
-          if (d <= targetStr && typeof pt.price === 'number' && pt.price > 0) {
-            best = pt.price;
-          }
+          if (d <= targetStr && typeof pt.price === 'number' && pt.price > 0) best = pt.price;
         }
 
         if (best == null) {
@@ -1066,6 +1096,7 @@
 
     function renderHome() {
       try {
+        setHTML('fatal-error-home', '');
         setText('greeting', getGreeting());
         setText('greeting-sub', 'Dein Portfolio');
 
@@ -1138,8 +1169,7 @@
         if (el) el.classList.toggle('active', t === type);
       });
       setDisplay('add-asset-selected', 'none');
-      const input = $('add-asset-input');
-      if (input) input.value = '';
+      if ($('add-asset-input')) $('add-asset-input').value = '';
       setDisplay('add-asset-results', 'none');
     }
 
@@ -1173,8 +1203,7 @@
       setDisplay('add-asset-results', 'none');
       setDisplay('add-calc-preview', 'none');
 
-      const input = $('add-asset-input');
-      if (input) input.value = '';
+      if ($('add-asset-input')) $('add-asset-input').value = '';
 
       const today = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Europe/Zurich',
@@ -1264,7 +1293,6 @@
 
       const amount = parseFloat($('add-amount')?.value || '');
       const price = parseFloat($('add-histprice')?.value || '');
-
       const prev = $('add-calc-preview');
       if (!prev) return;
 
@@ -1357,7 +1385,7 @@
 
     function setMarketFilter(f, btn) {
       marketFilter = f;
-      document.querySelectorAll('.screen#screen-markets .filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#markets-filter-row .filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderMarkets();
     }
@@ -1373,7 +1401,7 @@
         </div>
         <div class="right">
           <div class="main">${eff ? fmtMoney(eff.price, settings.currency, eff.price < 1 ? 6 : 2) : '—'}</div>
-          <div class="minor ${eff && eff.change24h >= 0 ? 'up' : 'down'}">${eff ? fmtPct(eff.change24h || 0) : ''}</div>
+          <div class="minor ${eff && eff.change24h >= 0 ? 'up' : eff && eff.change24h < 0 ? 'down' : 'muted'}">${eff ? fmtPct(eff.change24h || 0) : ''}</div>
         </div>
       </div>`;
     }
@@ -1440,6 +1468,17 @@
         banner = `<div class="banner">Manueller Kurs aktiv.</div>`;
       }
 
+      let meta = '';
+      if (type === 'stock') {
+        meta = `<div class="page-sub" style="margin-bottom:0;">${a.exch || '—'} · ${a.sect || '—'} · ${a.country || '—'}</div>`;
+      } else if (type === 'etf') {
+        meta = `<div class="page-sub" style="margin-bottom:0;">${a.provider || '—'} · TER ${a.ter || '—'} · ${a.dist || '—'}</div>`;
+      } else if (type === 'metal') {
+        meta = `<div class="page-sub" style="margin-bottom:0;">${a.unit || '—'}</div>`;
+      } else if (type === 'crypto') {
+        meta = `<div class="page-sub" style="margin-bottom:0;">${a.cat || '—'}</div>`;
+      }
+
       let positionBlock = '';
       if (p) {
         positionBlock = `
@@ -1450,6 +1489,8 @@
               <div><div class="stat-label">Ø Kaufpreis</div><div class="stat-val">${fmtMoney(p.avgCost)}</div></div>
               <div><div class="stat-label">Investiert</div><div class="stat-val">${fmtMoney(p.investedTotal)}</div></div>
               <div><div class="stat-label">Aktueller Wert</div><div class="stat-val">${fmtMoney(p.currentValue)}</div></div>
+              <div><div class="stat-label">G / V</div><div class="stat-val ${p.pnlAbsolute >= 0 ? 'up' : 'down'}">${fmtSign(p.pnlAbsolute)}</div></div>
+              <div><div class="stat-label">Rendite</div><div class="stat-val ${p.pnlPercent >= 0 ? 'up' : 'down'}">${fmtPct(p.pnlPercent)}</div></div>
             </div>
           </div>
 
@@ -1470,7 +1511,8 @@
             <div class="icon" style="width:52px;height:52px;font-size:20px;background:${a.bg};color:${a.color}">${a.icon}</div>
             <div class="grow">
               <div class="page-title" style="font-size:24px;margin-bottom:2px;">${a.name}</div>
-              <div class="page-sub" style="margin-bottom:0;">${a.sym} · ${type.toUpperCase()}${a.exch ? ' · ' + a.exch : ''}</div>
+              <div class="page-sub" style="margin-bottom:0;">${a.sym} · ${type.toUpperCase()}</div>
+              ${meta}
             </div>
           </div>
 
