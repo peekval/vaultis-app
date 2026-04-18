@@ -23,7 +23,6 @@
       --radius:14px;
       --radius-sm:10px;
     }
-
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     body{
       background:var(--bg);
@@ -31,29 +30,16 @@
       font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
       min-height:100vh;
     }
-
     .app{
       max-width:480px;
       margin:0 auto;
       min-height:100vh;
       padding:20px 16px 100px;
     }
-
     .screen{display:none}
     .screen.active{display:block}
-
-    .page-title{
-      font-size:28px;
-      font-weight:700;
-      margin-bottom:4px;
-    }
-
-    .page-sub{
-      font-size:12px;
-      color:var(--text3);
-      margin-bottom:18px;
-    }
-
+    .page-title{font-size:28px;font-weight:700;margin-bottom:4px}
+    .page-sub{font-size:12px;color:var(--text3);margin-bottom:18px}
     .hero,.card{
       background:linear-gradient(135deg,var(--bg2),var(--bg3));
       border:1px solid var(--border);
@@ -61,442 +47,139 @@
       padding:16px;
       margin-bottom:14px;
     }
-
-    .hero-label{
-      font-size:11px;
-      color:var(--text3);
-      text-transform:uppercase;
-      letter-spacing:.4px;
-      margin-bottom:6px;
-    }
-
-    .hero-value{
-      font-size:34px;
-      font-weight:700;
-      line-height:1.05;
-      margin-bottom:8px;
-    }
-
+    .hero-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+    .hero-value{font-size:34px;font-weight:700;line-height:1.05;margin-bottom:8px}
     .hero-change{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      font-size:12px;
-      font-weight:600;
-      padding:4px 10px;
-      border-radius:999px;
-      background:var(--bg4);
-      color:var(--text3);
-      margin-bottom:14px;
+      display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      padding:4px 10px;border-radius:999px;background:var(--bg4);color:var(--text3);margin-bottom:14px;
     }
-
     .hero-change.up{background:rgba(46,204,143,.12);color:var(--positive)}
     .hero-change.down{background:rgba(240,85,106,.12);color:var(--negative)}
-
     .stats-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      border-top:1px solid var(--border);
-      padding-top:14px;
+      display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid var(--border);padding-top:14px;
     }
-
-    .stat-label{
-      font-size:10px;
-      color:var(--text3);
-      text-transform:uppercase;
-      letter-spacing:.4px;
-      margin-bottom:4px;
-    }
-
-    .stat-val{
-      font-size:15px;
-      font-weight:600;
-    }
-
+    .stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+    .stat-val{font-size:15px;font-weight:600}
     .muted{color:var(--text3)}
     .up{color:var(--positive)}
     .down{color:var(--negative)}
-
-    .section-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin:18px 0 10px;
-    }
-
-    .section-title{
-      font-size:14px;
-      font-weight:700;
-    }
-
+    .section-head{display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px}
+    .section-title{font-size:14px;font-weight:700}
     .btn{
-      width:100%;
-      border:none;
-      border-radius:var(--radius-sm);
-      padding:12px 14px;
-      font-size:14px;
-      font-weight:600;
-      cursor:pointer;
+      width:100%;border:none;border-radius:var(--radius-sm);padding:12px 14px;
+      font-size:14px;font-weight:600;cursor:pointer;
     }
-
     .btn-primary{background:var(--primary);color:#fff}
     .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
     .btn-danger{background:rgba(240,85,106,.12);color:var(--negative);border:1px solid rgba(240,85,106,.22)}
-
     .btn-inline{
-      width:auto;
-      padding:8px 12px;
-      border-radius:8px;
-      background:var(--bg3);
-      border:1px solid var(--border);
-      color:var(--text2);
-      font-size:12px;
-      cursor:pointer;
+      width:auto;padding:8px 12px;border-radius:8px;background:var(--bg3);
+      border:1px solid var(--border);color:var(--text2);font-size:12px;cursor:pointer;
     }
-
-    .row-list{
-      background:var(--bg2);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      overflow:hidden;
-    }
-
+    .row-list{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
     .row{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      padding:12px 14px;
-      border-bottom:1px solid var(--border);
-      cursor:pointer;
+      display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;
     }
-
     .row:last-child{border-bottom:none}
-
     .icon{
-      width:40px;
-      height:40px;
-      border-radius:50%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:700;
-      flex-shrink:0;
+      width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      font-weight:700;flex-shrink:0;
     }
-
     .grow{flex:1;min-width:0}
-
-    .name{
-      font-size:14px;
-      font-weight:700;
-      margin-bottom:2px;
-    }
-
-    .sub{
-      font-size:11px;
-      color:var(--text3);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
+    .name{font-size:14px;font-weight:700;margin-bottom:2px}
+    .sub{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .right{text-align:right}
     .right .main{font-size:14px;font-weight:600}
     .right .minor{font-size:11px}
-
     .tag{
-      display:inline-flex;
-      align-items:center;
-      padding:2px 7px;
-      border-radius:999px;
-      font-size:10px;
-      font-weight:700;
-      margin-left:6px;
-      background:var(--bg4);
-      color:var(--text2);
+      display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:10px;
+      font-weight:700;margin-left:6px;background:var(--bg4);color:var(--text2);
     }
-
     .banner{
-      background:rgba(240,192,96,.12);
-      color:var(--gold);
-      border:1px solid rgba(240,192,96,.18);
-      border-radius:var(--radius-sm);
-      padding:10px 12px;
-      font-size:12px;
-      line-height:1.5;
-      margin-bottom:12px;
+      background:rgba(240,192,96,.12);color:var(--gold);border:1px solid rgba(240,192,96,.18);
+      border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;line-height:1.5;margin-bottom:12px;
     }
-
     .error-box{
-      background:rgba(240,85,106,.12);
-      color:var(--negative);
-      border:1px solid rgba(240,85,106,.18);
-      border-radius:var(--radius-sm);
-      padding:12px;
-      font-size:12px;
-      line-height:1.5;
-      margin-bottom:12px;
-      white-space:pre-wrap;
+      background:rgba(240,85,106,.12);color:var(--negative);border:1px solid rgba(240,85,106,.18);
+      border-radius:var(--radius-sm);padding:12px;font-size:12px;line-height:1.5;margin-bottom:12px;white-space:pre-wrap;
     }
-
     .input,.select{
-      width:100%;
-      background:var(--bg3);
-      color:var(--text);
-      border:1px solid var(--border);
-      border-radius:var(--radius-sm);
-      padding:12px;
-      font-size:14px;
-      outline:none;
+      width:100%;background:var(--bg3);color:var(--text);border:1px solid var(--border);
+      border-radius:var(--radius-sm);padding:12px;font-size:14px;outline:none;
     }
-
     .input:focus,.select:focus{border-color:var(--primary)}
-
-    .label{
-      display:block;
-      font-size:11px;
-      color:var(--text3);
-      margin-bottom:6px;
-      text-transform:uppercase;
-      letter-spacing:.35px;
-    }
-
+    .label{display:block;font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.35px}
     .field{margin-bottom:14px}
-
-    .grid-2{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-    }
-
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .toggle-row,.filter-row{
-      display:flex;
-      gap:8px;
-      margin-bottom:14px;
-      overflow-x:auto;
-      scrollbar-width:none;
+      display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;
     }
-
     .toggle-row::-webkit-scrollbar,.filter-row::-webkit-scrollbar{display:none}
-
     .toggle-btn,.filter-btn{
-      flex:1;
-      min-width:max-content;
-      border:1px solid var(--border);
-      background:var(--bg3);
-      color:var(--text2);
-      border-radius:10px;
-      padding:10px 12px;
-      font-size:12px;
-      font-weight:600;
-      cursor:pointer;
+      flex:1;min-width:max-content;border:1px solid var(--border);background:var(--bg3);color:var(--text2);
+      border-radius:10px;padding:10px 12px;font-size:12px;font-weight:600;cursor:pointer;
     }
-
-    .toggle-btn.active,.filter-btn.active{
-      background:var(--primary-soft);
-      border-color:var(--primary);
-      color:#c8c0ff;
-    }
-
+    .toggle-btn.active,.filter-btn.active{background:var(--primary-soft);border-color:var(--primary);color:#c8c0ff}
     .search-box{position:relative;margin-bottom:10px}
     .search-box .input{padding-left:38px}
-    .search-icon{
-      position:absolute;
-      left:12px;
-      top:50%;
-      transform:translateY(-50%);
-      color:var(--text3);
-      pointer-events:none;
-    }
-
+    .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
     .results{
-      display:none;
-      background:var(--bg3);
-      border:1px solid var(--border);
-      border-radius:10px;
-      margin-top:6px;
-      overflow:hidden;
-      max-height:220px;
-      overflow-y:auto;
+      display:none;background:var(--bg3);border:1px solid var(--border);border-radius:10px;margin-top:6px;
+      overflow:hidden;max-height:220px;overflow-y:auto;
     }
-
     .result-item{
-      padding:10px 12px;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      border-bottom:1px solid var(--border);
-      cursor:pointer;
+      padding:10px 12px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer;
     }
-
     .result-item:last-child{border-bottom:none}
-
     .selected-asset{
-      display:none;
-      margin-top:8px;
-      background:var(--bg3);
-      border:1px solid var(--border);
-      border-radius:10px;
-      padding:10px;
-      align-items:center;
-      gap:10px;
+      display:none;margin-top:8px;background:var(--bg3);border:1px solid var(--border);
+      border-radius:10px;padding:10px;align-items:center;gap:10px;
     }
-
     .chart-card{
-      background:var(--bg2);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:14px;
-      margin-bottom:14px;
+      background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px;
     }
-
-    .chart-tabs{
-      display:flex;
-      gap:6px;
-      margin-bottom:12px;
-    }
-
+    .chart-tabs{display:flex;gap:6px;margin-bottom:12px}
     .chart-tab{
-      flex:1;
-      background:var(--bg3);
-      border:1px solid var(--border);
-      color:var(--text2);
-      border-radius:8px;
-      padding:8px;
-      font-size:12px;
-      cursor:pointer;
+      flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text2);
+      border-radius:8px;padding:8px;font-size:12px;cursor:pointer;
     }
-
-    .chart-tab.active{
-      background:var(--primary-soft);
-      border-color:var(--primary);
-      color:#c8c0ff;
-    }
-
-    .chart-wrap{
-      height:180px;
-      position:relative;
-    }
-
+    .chart-tab.active{background:var(--primary-soft);border-color:var(--primary);color:#c8c0ff}
+    .chart-wrap{height:180px;position:relative}
     .chart-summary{
-      display:flex;
-      justify-content:space-between;
-      gap:8px;
-      flex-wrap:wrap;
-      font-size:11px;
-      color:var(--text3);
-      margin-top:10px;
+      display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-top:10px;
     }
-
     .bottom-nav{
-      position:fixed;
-      bottom:0;
-      left:50%;
-      transform:translateX(-50%);
-      width:100%;
-      max-width:480px;
-      display:flex;
-      padding:8px 0 calc(8px + env(safe-area-inset-bottom));
-      background:var(--bg2);
-      border-top:1px solid var(--border);
-      z-index:50;
+      position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;
+      padding:8px 0 calc(8px + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--border);z-index:50;
     }
-
     .nav-btn{
-      flex:1;
-      background:none;
-      border:none;
-      color:var(--text3);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:4px;
-      font-size:10px;
-      cursor:pointer;
+      flex:1;background:none;border:none;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;cursor:pointer;
     }
-
     .nav-btn.active{color:#c8c0ff}
-
     .nav-fab{
-      width:48px;
-      height:48px;
-      border-radius:50%;
-      border:none;
-      background:var(--primary);
-      color:#fff;
-      font-size:24px;
-      margin-top:-18px;
-      box-shadow:0 8px 20px rgba(124,106,245,.35);
-      cursor:pointer;
-      flex:0 0 auto;
+      width:48px;height:48px;border-radius:50%;border:none;background:var(--primary);color:#fff;font-size:24px;
+      margin-top:-18px;box-shadow:0 8px 20px rgba(124,106,245,.35);cursor:pointer;flex:0 0 auto;
     }
-
-    .empty{
-      text-align:center;
-      color:var(--text3);
-      padding:40px 16px;
-    }
-
+    .empty{text-align:center;color:var(--text3);padding:40px 16px}
     .toast{
-      position:fixed;
-      bottom:92px;
-      left:50%;
-      transform:translateX(-50%);
-      max-width:320px;
-      background:var(--bg3);
-      border:1px solid var(--border);
-      color:var(--text);
-      border-radius:10px;
-      padding:10px 16px;
-      font-size:13px;
-      opacity:0;
-      pointer-events:none;
-      transition:opacity .25s;
-      z-index:100;
+      position:fixed;bottom:92px;left:50%;transform:translateX(-50%);max-width:320px;background:var(--bg3);
+      border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 16px;font-size:13px;
+      opacity:0;pointer-events:none;transition:opacity .25s;z-index:100;
     }
-
     .toast.show{opacity:1}
-
     .modal-overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.72);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      z-index:120;
+      position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-end;justify-content:center;z-index:120;
     }
-
     .modal-overlay.open{display:flex}
-
     .modal{
-      width:100%;
-      max-width:480px;
-      background:var(--bg2);
-      border-radius:20px 20px 0 0;
-      padding:20px 16px calc(20px + env(safe-area-inset-bottom));
-      max-height:85vh;
-      overflow:auto;
+      width:100%;max-width:480px;background:var(--bg2);border-radius:20px 20px 0 0;
+      padding:20px 16px calc(20px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto;
     }
-
-    .modal-title{
-      text-align:center;
-      font-size:17px;
-      font-weight:700;
-      margin-bottom:14px;
-    }
-
+    .modal-title{text-align:center;font-size:17px;font-weight:700;margin-bottom:14px}
     .spinner{
-      width:16px;
-      height:16px;
-      border:2px solid rgba(255,255,255,.12);
-      border-top-color:var(--primary);
-      border-radius:50%;
-      display:inline-block;
-      animation:spin .8s linear infinite;
-      vertical-align:middle;
+      width:16px;height:16px;border:2px solid rgba(255,255,255,.12);border-top-color:var(--primary);
+      border-radius:50%;display:inline-block;animation:spin .8s linear infinite;vertical-align:middle;
     }
-
     @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
@@ -505,31 +188,17 @@
     <div class="screen active" id="screen-home">
       <div class="page-title" id="greeting">Vaultis</div>
       <div class="page-sub" id="greeting-sub">Portfolio-Uebersicht</div>
-
       <div id="fatal-error-home"></div>
 
       <div class="hero">
         <div class="hero-label">Portfoliowert</div>
         <div class="hero-value" id="hero-val">CHF 0.00</div>
         <div class="hero-change" id="hero-ret">— 0.00%</div>
-
         <div class="stats-grid">
-          <div>
-            <div class="stat-label">Investiert</div>
-            <div class="stat-val muted" id="hero-inv">CHF 0.00</div>
-          </div>
-          <div>
-            <div class="stat-label">Gewinn / Verlust</div>
-            <div class="stat-val" id="hero-pnl">CHF 0.00</div>
-          </div>
-          <div>
-            <div class="stat-label">Heute</div>
-            <div class="stat-val" id="hero-day">CHF 0.00</div>
-          </div>
-          <div>
-            <div class="stat-label">Datenqualitaet</div>
-            <div class="stat-val muted" id="hero-quality">—</div>
-          </div>
+          <div><div class="stat-label">Investiert</div><div class="stat-val muted" id="hero-inv">CHF 0.00</div></div>
+          <div><div class="stat-label">Gewinn / Verlust</div><div class="stat-val" id="hero-pnl">CHF 0.00</div></div>
+          <div><div class="stat-label">Heute</div><div class="stat-val" id="hero-day">CHF 0.00</div></div>
+          <div><div class="stat-label">Datenqualitaet</div><div class="stat-val muted" id="hero-quality">—</div></div>
         </div>
       </div>
 
@@ -738,11 +407,11 @@
     let API_BASE = localStorage.getItem('vaultis_api_base') || API_BASE_DEFAULT;
 
     const STORAGE = {
-      TXNS: 'vaultis_final_txns',
-      MANUAL: 'vaultis_final_manual',
-      PCACHE: 'vaultis_final_pcache',
-      HCACHE: 'vaultis_final_hcache',
-      SETTINGS: 'vaultis_final_settings'
+      TXNS: 'vaultis_final2_txns',
+      MANUAL: 'vaultis_final2_manual',
+      PCACHE: 'vaultis_final2_pcache',
+      HCACHE: 'vaultis_final2_hcache',
+      SETTINGS: 'vaultis_final2_settings'
     };
 
     const CATALOG = {
@@ -752,8 +421,7 @@
         { id:'solana', sym:'SOL', name:'Solana', icon:'◎', color:'#9945ff', bg:'rgba(153,69,255,0.15)', cat:'Layer 1', desc:'Schnelle Layer-1-Blockchain.' },
         { id:'ripple', sym:'XRP', name:'XRP', icon:'✕', color:'#346aa9', bg:'rgba(52,106,169,0.15)', cat:'Payments', desc:'Zahlungsnetzwerk fuer schnelle Transfers.' },
         { id:'cardano', sym:'ADA', name:'Cardano', icon:'⚙', color:'#0033ad', bg:'rgba(0,51,173,0.15)', cat:'Layer 1', desc:'Proof-of-Stake-Blockchain.' },
-        { id:'binancecoin', sym:'BNB', name:'BNB', icon:'B', color:'#f3ba2f', bg:'rgba(243,186,47,0.15)', cat:'Exchange', desc:'Token des Binance-Oekosystems.' },
-        { id:'dogecoin', sym:'DOGE', name:'Dogecoin', icon:'Ð', color:'#c2a633', bg:'rgba(194,166,51,0.15)', cat:'Meme', desc:'Meme-Coin.' }
+        { id:'binancecoin', sym:'BNB', name:'BNB', icon:'B', color:'#f3ba2f', bg:'rgba(243,186,47,0.15)', cat:'Exchange', desc:'Token des Binance-Oekosystems.' }
       ],
       stock: [
         { id:'AAPL', sym:'AAPL', name:'Apple Inc.', icon:'A', color:'#555', bg:'rgba(85,85,85,0.15)', exch:'NASDAQ', sect:'Technology', country:'USA', desc:'iPhone, Mac, Services.' },
@@ -763,14 +431,11 @@
         { id:'GOOGL', sym:'GOOGL', name:'Alphabet Inc.', icon:'G', color:'#4285f4', bg:'rgba(66,133,244,0.15)', exch:'NASDAQ', sect:'Communication', country:'USA', desc:'Google, YouTube, Cloud.' },
         { id:'META', sym:'META', name:'Meta Platforms Inc.', icon:'M', color:'#1877f2', bg:'rgba(24,119,242,0.15)', exch:'NASDAQ', sect:'Communication', country:'USA', desc:'Facebook, Instagram, WhatsApp.' },
         { id:'TSLA', sym:'TSLA', name:'Tesla Inc.', icon:'T', color:'#cc0000', bg:'rgba(204,0,0,0.15)', exch:'NASDAQ', sect:'Consumer Disc.', country:'USA', desc:'Elektrofahrzeuge und Energie.' },
-        { id:'ABBN', sym:'ABBN', name:'ABB Ltd', icon:'A', color:'#e4002b', bg:'rgba(228,0,43,0.15)', exch:'SIX', sect:'Industrials', country:'CHE', desc:'Schweizer Technologiekonzern.' },
-        { id:'NESN', sym:'NESN', name:'Nestle S.A.', icon:'N', color:'#d4a017', bg:'rgba(212,160,23,0.15)', exch:'SIX', sect:'Consumer Staples', country:'CHE', desc:'Nahrungsmittelkonzern.' },
-        { id:'NOVN', sym:'NOVN', name:'Novartis AG', icon:'N', color:'#0460a9', bg:'rgba(4,96,169,0.15)', exch:'SIX', sect:'Healthcare', country:'CHE', desc:'Pharmaunternehmen.' }
+        { id:'ABBN', sym:'ABBN', name:'ABB Ltd', icon:'A', color:'#e4002b', bg:'rgba(228,0,43,0.15)', exch:'SIX', sect:'Industrials', country:'CHE', desc:'Schweizer Technologiekonzern.' }
       ],
       etf: [
         { id:'VWRL', sym:'VWRL', name:'Vanguard FTSE All-World ETF', icon:'V', color:'#941b2f', bg:'rgba(148,27,47,0.15)', provider:'Vanguard', isin:'IE00B3RBWM25', ter:'0.22%', dist:'Ausschuettend', desc:'Weltaktien-ETF.' },
-        { id:'CSPX', sym:'CSPX', name:'iShares Core S&P 500 ETF', icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares', isin:'IE00B5BMR087', ter:'0.07%', dist:'Thesaurierend', desc:'S&P-500-ETF.' },
-        { id:'IWDA', sym:'IWDA', name:'iShares Core MSCI World ETF', icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares', isin:'IE00B4L5Y983', ter:'0.20%', dist:'Thesaurierend', desc:'MSCI World ETF.' }
+        { id:'CSPX', sym:'CSPX', name:'iShares Core S&P 500 ETF', icon:'I', color:'#009b77', bg:'rgba(0,155,119,0.15)', provider:'iShares', isin:'IE00B5BMR087', ter:'0.07%', dist:'Thesaurierend', desc:'S&P-500-ETF.' }
       ],
       metal: [
         { id:'gold', sym:'XAU', name:'Gold', icon:'Au', color:'#fbbf24', bg:'rgba(251,191,36,0.15)', unit:'Unze (oz)', desc:'Edelmetall.' },
@@ -813,60 +478,60 @@
       }
     }
 
-    function saveTxns() { localStorage.setItem(STORAGE.TXNS, JSON.stringify(transactions)); }
-    function saveManual() { localStorage.setItem(STORAGE.MANUAL, JSON.stringify(manualPrices)); }
-    function savePCache() { localStorage.setItem(STORAGE.PCACHE, JSON.stringify(priceCache)); }
-    function saveHCache() { localStorage.setItem(STORAGE.HCACHE, JSON.stringify(histCache)); }
-    function saveSettings() { localStorage.setItem(STORAGE.SETTINGS, JSON.stringify(settings)); }
+    function saveTxns(){ localStorage.setItem(STORAGE.TXNS, JSON.stringify(transactions)); }
+    function saveManual(){ localStorage.setItem(STORAGE.MANUAL, JSON.stringify(manualPrices)); }
+    function savePCache(){ localStorage.setItem(STORAGE.PCACHE, JSON.stringify(priceCache)); }
+    function saveHCache(){ localStorage.setItem(STORAGE.HCACHE, JSON.stringify(histCache)); }
+    function saveSettings(){ localStorage.setItem(STORAGE.SETTINGS, JSON.stringify(settings)); }
 
-    function saveApiBase(val) {
+    function saveApiBase(val){
       API_BASE = (val || '').trim() || API_BASE_DEFAULT;
       localStorage.setItem('vaultis_api_base', API_BASE);
       setText('set-api-status', `Gespeichert: ${API_BASE}`);
     }
 
-    function allAssets() {
+    function allAssets(){
       return Object.entries(CATALOG).flatMap(([type, list]) => list.map(a => ({ ...a, type })));
     }
 
-    function findAsset(id, type) {
+    function findAsset(id, type){
       return (CATALOG[type] || []).find(a => a.id === id) || null;
     }
 
-    function fmtMoney(n, currency = settings.currency, decimals = 2) {
+    function fmtMoney(n, currency = settings.currency, decimals = 2){
       return new Intl.NumberFormat('de-CH', {
-        style: 'currency',
+        style:'currency',
         currency,
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
+        minimumFractionDigits:decimals,
+        maximumFractionDigits:decimals
       }).format(Number(n || 0));
     }
 
-    function fmtPct(n) {
+    function fmtPct(n){
       const v = Number(n || 0);
       return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
     }
 
-    function fmtSign(n, currency = settings.currency) {
+    function fmtSign(n, currency = settings.currency){
       const v = Number(n || 0);
       return (v >= 0 ? '+' : '−') + fmtMoney(Math.abs(v), currency);
     }
 
-    function hexToRgba(hex, a) {
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
+    function hexToRgba(hex, a){
+      const r = parseInt(hex.slice(1,3),16);
+      const g = parseInt(hex.slice(3,5),16);
+      const b = parseInt(hex.slice(5,7),16);
       return `rgba(${r},${g},${b},${a})`;
     }
 
-    function getGreeting() {
+    function getGreeting(){
       const h = new Date().getHours();
       if (h < 12) return 'Guten Morgen';
       if (h < 18) return 'Guten Tag';
       return 'Guten Abend';
     }
 
-    function showToast(msg, type = '') {
+    function showToast(msg, type=''){
       const el = $('toast');
       if (!el) return;
       el.textContent = msg;
@@ -876,18 +541,17 @@
       toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
     }
 
-    function openModal(html) {
+    function openModal(html){
       setHTML('modal-body', html);
       $('modal')?.classList.add('open');
     }
 
-    function closeModal() {
+    function closeModal(){
       $('modal')?.classList.remove('open');
     }
 
-    async function apiGet(path, timeoutMs = 10000) {
+    async function apiGet(path, timeoutMs = 10000){
       if (!API_BASE) throw new Error('API_BASE nicht konfiguriert');
-
       const url = API_BASE.replace(/\/$/, '') + path;
 
       const timeoutPromise = new Promise((_, reject) => {
@@ -905,11 +569,10 @@
       return Promise.race([fetchPromise, timeoutPromise]);
     }
 
-    async function fetchQuote(id, type) {
+    async function fetchQuote(id, type){
       try {
         const cur = settings.currency;
         const data = await apiGet(`/api/quote?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&currency=${cur}`);
-
         if (!data || typeof data.price !== 'number' || data.price <= 0) return null;
 
         priceCache[id] = {
@@ -927,7 +590,7 @@
       }
     }
 
-    async function fetchHistory(id, type, range) {
+    async function fetchHistory(id, type, range){
       try {
         const cur = settings.currency;
         return await apiGet(`/api/history?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&range=${range}&currency=${cur}`);
@@ -937,7 +600,7 @@
       }
     }
 
-    async function fetchHistoryByDate(id, type, date) {
+    async function fetchHistoryByDate(id, type, date){
       const cacheKey = `${id}_${type}_${date}_${settings.currency}`;
       if (histCache[cacheKey] != null) return histCache[cacheKey];
 
@@ -965,11 +628,11 @@
         const data = await fetchHistory(id, type, range);
         if (!data || !Array.isArray(data.points) || !data.points.length) return null;
 
-        const targetStr = date.slice(0, 10);
+        const targetStr = date.slice(0,10);
         let best = null;
 
         for (const pt of data.points) {
-          const d = String(pt.date).slice(0, 10);
+          const d = String(pt.date).slice(0,10);
           if (d <= targetStr && typeof pt.price === 'number' && pt.price > 0) best = pt.price;
         }
 
@@ -983,7 +646,6 @@
           saveHCache();
           return best;
         }
-
         return null;
       } catch (e) {
         console.warn(`[hist-by-date] ${id}:`, e.message);
@@ -991,9 +653,9 @@
       }
     }
 
-    function getEffectivePrice(assetId) {
+    function getEffectivePrice(assetId){
       if (manualPrices[assetId]) {
-        return { price: Number(manualPrices[assetId].price), source: 'manual', change24h: 0 };
+        return { price: Number(manualPrices[assetId].price), source:'manual', change24h:0 };
       }
       if (priceCache[assetId] && typeof priceCache[assetId].price === 'number' && priceCache[assetId].price > 0) {
         return {
@@ -1005,12 +667,12 @@
       return null;
     }
 
-    function getPositions() {
+    function getPositions(){
       const grouped = {};
 
       for (const t of transactions) {
         const key = `${t.type}:${t.assetId}`;
-        if (!grouped[key]) grouped[key] = { assetId: t.assetId, type: t.type, txns: [] };
+        if (!grouped[key]) grouped[key] = { assetId:t.assetId, type:t.type, txns:[] };
         grouped[key].txns.push(t);
       }
 
@@ -1043,37 +705,25 @@
         const dayChangeAbsolute = currentValue - priorValue;
 
         return {
-          asset,
-          type: g.type,
-          txns: g.txns,
-          units,
-          investedTotal,
-          avgCost,
-          currentPrice,
-          priceSource,
-          currentValue,
-          pnlAbsolute,
-          pnlPercent,
-          dayChangeAbsolute,
-          dayChangePercent: change24h
+          asset, type:g.type, txns:g.txns, units, investedTotal, avgCost, currentPrice, priceSource,
+          currentValue, pnlAbsolute, pnlPercent, dayChangeAbsolute, dayChangePercent:change24h
         };
       }).filter(Boolean);
     }
 
-    function getTotals(positions) {
-      const totalValue = positions.reduce((s, p) => s + p.currentValue, 0);
-      const totalInvested = positions.reduce((s, p) => s + p.investedTotal, 0);
+    function getTotals(positions){
+      const totalValue = positions.reduce((s,p) => s + p.currentValue, 0);
+      const totalInvested = positions.reduce((s,p) => s + p.investedTotal, 0);
       const totalPnL = totalValue - totalInvested;
       const totalPnLPct = totalInvested > 0 ? ((totalValue / totalInvested) - 1) * 100 : 0;
-      const totalDay = positions.reduce((s, p) => s + p.dayChangeAbsolute, 0);
+      const totalDay = positions.reduce((s,p) => s + p.dayChangeAbsolute, 0);
       const live = positions.filter(p => p.priceSource !== 'missing' && p.priceSource !== 'manual').length;
       const manual = positions.filter(p => p.priceSource === 'manual').length;
       const missing = positions.filter(p => p.priceSource === 'missing').length;
-
       return { totalValue, totalInvested, totalPnL, totalPnLPct, totalDay, live, manual, missing };
     }
 
-    function posRow(p) {
+    function posRow(p){
       const cls = p.pnlPercent > 0.01 ? 'up' : (p.pnlPercent < -0.01 ? 'down' : 'muted');
       const srcTag = p.priceSource === 'missing'
         ? `<span class="tag">kein Kurs</span>`
@@ -1094,7 +744,7 @@
       </div>`;
     }
 
-    function renderHome() {
+    function renderHome(){
       try {
         setHTML('fatal-error-home', '');
         setText('greeting', getGreeting());
@@ -1130,7 +780,7 @@
         const homePos = $('home-positions');
         if (homePos) {
           homePos.innerHTML = positions.length
-            ? `<div class="row-list">${positions.slice(0, 5).map(posRow).join('')}</div>`
+            ? `<div class="row-list">${positions.slice(0,5).map(posRow).join('')}</div>`
             : `<div class="empty">Noch keine Positionen</div>`;
         }
       } catch (e) {
@@ -1139,14 +789,14 @@
       }
     }
 
-    function setPortfolioFilter(f, btn) {
+    function setPortfolioFilter(f, btn){
       portfolioFilter = f;
       document.querySelectorAll('#ptf-filter .filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderPortfolio();
     }
 
-    function renderPortfolio() {
+    function renderPortfolio(){
       const el = $('ptf-list');
       if (!el) return;
 
@@ -1161,7 +811,7 @@
         : `<div class="empty">Keine Positionen</div>`;
     }
 
-    function setAddType(type) {
+    function setAddType(type){
       addType = type;
       addAsset = null;
       ['crypto','stock','etf','metal'].forEach(t => {
@@ -1173,7 +823,7 @@
       setDisplay('add-asset-results', 'none');
     }
 
-    function setAddMode(mode) {
+    function setAddMode(mode){
       addMode = mode;
       $('mbtn-units')?.classList.toggle('active', mode === 'units');
       $('mbtn-amount')?.classList.toggle('active', mode === 'amount');
@@ -1182,7 +832,7 @@
       onAmountInput();
     }
 
-    function resetAddForm() {
+    function resetAddForm(){
       addType = 'crypto';
       addMode = 'units';
       addAsset = null;
@@ -1206,10 +856,7 @@
       if ($('add-asset-input')) $('add-asset-input').value = '';
 
       const today = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Europe/Zurich',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
+        timeZone:'Europe/Zurich', year:'numeric', month:'2-digit', day:'2-digit'
       }).format(new Date());
 
       if ($('add-date')) $('add-date').value = today;
@@ -1224,7 +871,7 @@
       setText('add-save-btn', 'Position speichern');
     }
 
-    function onAddAssetSearch() {
+    function onAddAssetSearch(){
       clearTimeout(addSearchTimeout);
       const q = (($('add-asset-input')?.value) || '').trim().toLowerCase();
 
@@ -1239,7 +886,7 @@
           a.name.toLowerCase().includes(q) ||
           a.id.toLowerCase().includes(q) ||
           (a.desc && a.desc.toLowerCase().includes(q))
-        ).slice(0, 10);
+        ).slice(0,10);
 
         const el = $('add-asset-results');
         if (!el) return;
@@ -1262,17 +909,18 @@
       }, 120);
     }
 
-    function hideAddResults() {
+    function hideAddResults(){
       setTimeout(() => setDisplay('add-asset-results', 'none'), 180);
     }
 
-    function selectAddAsset(i) {
+    function selectAddAsset(i){
       addAsset = addAssetResults[i];
       if (!addAsset) return;
 
       setDisplay('add-asset-results', 'none');
       setDisplay('add-asset-selected', 'flex');
       if ($('add-asset-input')) $('add-asset-input').value = '';
+
       if ($('add-asset-icon')) {
         $('add-asset-icon').style.background = addAsset.bg;
         $('add-asset-icon').style.color = addAsset.color;
@@ -1282,13 +930,13 @@
       setText('add-asset-sym', `${addAsset.sym} · ${addType.toUpperCase()}`);
     }
 
-    function clearAddAsset() {
+    function clearAddAsset(){
       addAsset = null;
       setDisplay('add-asset-selected', 'none');
       if ($('add-asset-input')) $('add-asset-input').value = '';
     }
 
-    function onAmountInput() {
+    function onAmountInput(){
       if (addMode !== 'amount') return;
 
       const amount = parseFloat($('add-amount')?.value || '');
@@ -1305,11 +953,8 @@
       }
     }
 
-    async function saveTransaction() {
-      if (!addAsset) {
-        showToast('Bitte ein Asset auswaehlen', 'warn');
-        return;
-      }
+    async function saveTransaction(){
+      if (!addAsset) return showToast('Bitte ein Asset auswaehlen', 'warn');
 
       const date = $('add-date')?.value;
       const currency = $('add-currency')?.value || settings.currency;
@@ -1326,14 +971,14 @@
         if (!(price > 0)) return showToast('Preis fehlt', 'warn');
 
         txn = {
-          id: 'tx_' + Date.now(),
-          assetId: addAsset.id,
-          type: addType,
-          mode: 'units',
+          id:'tx_' + Date.now(),
+          assetId:addAsset.id,
+          type:addType,
+          mode:'units',
           date,
           currency,
-          units: qty,
-          unitPrice: price,
+          units:qty,
+          unitPrice:price,
           fees,
           notes
         };
@@ -1356,15 +1001,15 @@
         }
 
         txn = {
-          id: 'tx_' + Date.now(),
-          assetId: addAsset.id,
-          type: addType,
-          mode: 'amount',
+          id:'tx_' + Date.now(),
+          assetId:addAsset.id,
+          type:addType,
+          mode:'amount',
           date,
           currency,
-          investedAmount: amount,
-          unitPriceAtPurchase: histPrice,
-          calculatedUnits: amount / histPrice,
+          investedAmount:amount,
+          unitPriceAtPurchase:histPrice,
+          calculatedUnits:amount / histPrice,
           fees,
           notes
         };
@@ -1372,7 +1017,6 @@
 
       transactions.push(txn);
       saveTxns();
-
       await fetchQuote(addAsset.id, addType);
 
       showToast('Position gespeichert', 'ok');
@@ -1383,14 +1027,14 @@
       showScreen('home');
     }
 
-    function setMarketFilter(f, btn) {
+    function setMarketFilter(f, btn){
       marketFilter = f;
       document.querySelectorAll('#markets-filter-row .filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderMarkets();
     }
 
-    function marketRow(a) {
+    function marketRow(a){
       const eff = getEffectivePrice(a.id);
       const sub = a.exch || a.provider || a.cat || a.unit || '';
       return `<div class="row" onclick="openDetail('${a.id}','${a.type}')">
@@ -1406,7 +1050,7 @@
       </div>`;
     }
 
-    function renderMarkets() {
+    function renderMarkets(){
       const el = $('markets-list');
       if (!el) return;
 
@@ -1423,7 +1067,7 @@
         );
       }
 
-      list.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+      list.sort((a,b) => a.name.localeCompare(b.name, 'de'));
       setText('markets-count', `${list.length} Assets`);
 
       el.innerHTML = list.length
@@ -1431,7 +1075,7 @@
         : `<div class="empty">Keine Treffer</div>`;
     }
 
-    function txRow(t) {
+    function txRow(t){
       const units = t.mode === 'amount' ? Number(t.calculatedUnits || 0) : Number(t.units || 0);
       const price = t.mode === 'amount' ? Number(t.unitPriceAtPurchase || 0) : Number(t.unitPrice || 0);
       const invested = t.mode === 'amount' ? Number(t.investedAmount || 0) : units * price;
@@ -1447,37 +1091,33 @@
       </div>`;
     }
 
-    function openDetail(assetId, type) {
-      detailAsset = { id: assetId, type };
-      renderDetail(assetId, type);
+    async function openDetail(assetId, type){
+      detailAsset = { id:assetId, type };
       showScreen('detail');
+      await renderDetail(assetId, type, true);
     }
 
-    async function renderDetail(assetId, type) {
+    async function renderDetail(assetId, type, tryLiveQuote = false){
       const a = findAsset(assetId, type);
       if (!a) return;
+
+      if (tryLiveQuote && !manualPrices[assetId]) {
+        try { await fetchQuote(assetId, type); } catch (e) { console.warn('detail live quote failed:', e); }
+      }
 
       const positions = getPositions();
       const p = positions.find(x => x.asset.id === assetId && x.type === type);
       const eff = getEffectivePrice(assetId);
 
       let banner = '';
-      if (!eff) {
-        banner = `<div class="banner">Kein Live-Kurs verfuegbar. Du kannst einen manuellen Kurs setzen.</div>`;
-      } else if (eff.source === 'manual') {
-        banner = `<div class="banner">Manueller Kurs aktiv.</div>`;
-      }
+      if (!eff) banner = `<div class="banner">Kein Live-Kurs verfuegbar. Du kannst einen manuellen Kurs setzen.</div>`;
+      else if (eff.source === 'manual') banner = `<div class="banner">Manueller Kurs aktiv.</div>`;
 
       let meta = '';
-      if (type === 'stock') {
-        meta = `<div class="page-sub" style="margin-bottom:0;">${a.exch || '—'} · ${a.sect || '—'} · ${a.country || '—'}</div>`;
-      } else if (type === 'etf') {
-        meta = `<div class="page-sub" style="margin-bottom:0;">${a.provider || '—'} · TER ${a.ter || '—'} · ${a.dist || '—'}</div>`;
-      } else if (type === 'metal') {
-        meta = `<div class="page-sub" style="margin-bottom:0;">${a.unit || '—'}</div>`;
-      } else if (type === 'crypto') {
-        meta = `<div class="page-sub" style="margin-bottom:0;">${a.cat || '—'}</div>`;
-      }
+      if (type === 'stock') meta = `<div class="page-sub" style="margin-bottom:0;">${a.exch || '—'} · ${a.sect || '—'} · ${a.country || '—'}</div>`;
+      else if (type === 'etf') meta = `<div class="page-sub" style="margin-bottom:0;">${a.provider || '—'} · TER ${a.ter || '—'} · ${a.dist || '—'}</div>`;
+      else if (type === 'metal') meta = `<div class="page-sub" style="margin-bottom:0;">${a.unit || '—'}</div>`;
+      else if (type === 'crypto') meta = `<div class="page-sub" style="margin-bottom:0;">${a.cat || '—'}</div>`;
 
       let positionBlock = '';
       if (p) {
@@ -1532,7 +1172,7 @@
           <div class="section-title" style="margin-bottom:10px;">Aktionen</div>
           <div class="grid-2">
             <button class="btn btn-ghost" onclick="openManualModal('${assetId}')">Manueller Kurs</button>
-            <button class="btn btn-ghost" onclick="refreshPrices()">Aktualisieren</button>
+            <button class="btn btn-ghost" onclick="forceRefreshDetailQuote('${assetId}','${type}')">Aktualisieren</button>
           </div>
         </div>
 
@@ -1542,7 +1182,16 @@
       await loadDetailChart(a, type, '1m');
     }
 
-    async function loadDetailChart(asset, type, range) {
+    async function forceRefreshDetailQuote(assetId, type){
+      if (!manualPrices[assetId]) await fetchQuote(assetId, type);
+      await renderDetail(assetId, type, false);
+      renderHome();
+      renderPortfolio();
+      renderMarkets();
+      showToast('Detail-Kurs aktualisiert', 'ok');
+    }
+
+    async function loadDetailChart(asset, type, range){
       setHTML('detail-chart-area', `
         <div class="chart-card">
           <div class="chart-tabs">
@@ -1578,7 +1227,7 @@
       if (canvas) canvas.style.display = 'block';
 
       const values = data.points.map(p => Number(p.price));
-      const labels = data.points.map(p => String(p.date).slice(0, 10));
+      const labels = data.points.map(p => String(p.date).slice(0,10));
       const first = values[0];
       const last = values[values.length - 1];
       const change = first > 0 ? ((last - first) / first) * 100 : 0;
@@ -1588,32 +1237,29 @@
       const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#7c6af5';
 
       detailChart = new Chart(canvas, {
-        type: 'line',
-        data: {
+        type:'line',
+        data:{
           labels,
-          datasets: [{
-            data: values,
-            borderColor: primary,
-            backgroundColor: (ctx) => {
-              const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 180);
-              g.addColorStop(0, hexToRgba(primary, 0.22));
+          datasets:[{
+            data:values,
+            borderColor:primary,
+            backgroundColor:(ctx) => {
+              const g = ctx.chart.ctx.createLinearGradient(0,0,0,180);
+              g.addColorStop(0, hexToRgba(primary, .22));
               g.addColorStop(1, hexToRgba(primary, 0));
               return g;
             },
-            fill: true,
-            tension: 0.28,
-            pointRadius: 0,
-            borderWidth: 2
+            fill:true,
+            tension:.28,
+            pointRadius:0,
+            borderWidth:2
           }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: false },
-            y: { display: false }
-          }
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ display:false } },
+          scales:{ x:{ display:false }, y:{ display:false } }
         }
       });
 
@@ -1626,7 +1272,7 @@
       }
     }
 
-    function openManualModal(assetId) {
+    function openManualModal(assetId){
       const existing = manualPrices[assetId];
       const cached = priceCache[assetId];
       const suggestion = existing ? existing.price : (cached ? cached.price : '');
@@ -1646,10 +1292,10 @@
       `);
     }
 
-    function saveManualAndClose(assetId) {
+    function saveManualAndClose(assetId){
       const v = parseFloat($('manual-price-input')?.value || '');
       if (!(v > 0)) return showToast('Ungueltiger Kurs', 'warn');
-      manualPrices[assetId] = { price: v, currency: settings.currency, setAt: Date.now() };
+      manualPrices[assetId] = { price:v, currency:settings.currency, setAt:Date.now() };
       saveManual();
       closeModal();
       showToast('Manueller Kurs gespeichert', 'ok');
@@ -1659,7 +1305,7 @@
       if (detailAsset && detailAsset.id === assetId) renderDetail(detailAsset.id, detailAsset.type);
     }
 
-    function clearManualAndClose(assetId) {
+    function clearManualAndClose(assetId){
       delete manualPrices[assetId];
       saveManual();
       closeModal();
@@ -1670,7 +1316,7 @@
       if (detailAsset && detailAsset.id === assetId) renderDetail(detailAsset.id, detailAsset.type);
     }
 
-    function confirmDeletePosition(assetId, type) {
+    function confirmDeletePosition(assetId, type){
       openModal(`
         <div class="modal-title">Position loeschen?</div>
         <div class="page-sub" style="text-align:center;margin-bottom:14px;">Alle Transaktionen dieser Position werden geloescht.</div>
@@ -1681,7 +1327,7 @@
       `);
     }
 
-    function doDeletePos(assetId, type) {
+    function doDeletePos(assetId, type){
       transactions = transactions.filter(t => !(t.assetId === assetId && t.type === type));
       saveTxns();
       closeModal();
@@ -1693,7 +1339,7 @@
       renderMarkets();
     }
 
-    function preSelectAsset(assetId, type) {
+    function preSelectAsset(assetId, type){
       addType = type;
       addAsset = findAsset(assetId, type);
       showScreen('add');
@@ -1711,7 +1357,7 @@
       }
     }
 
-    async function refreshPrices() {
+    async function refreshPrices(){
       const positions = getPositions();
       if (!positions.length) return showToast('Keine Positionen', 'warn');
 
@@ -1729,13 +1375,13 @@
       showToast('Kurse aktualisiert', 'ok');
     }
 
-    function initSettings() {
+    function initSettings(){
       if ($('set-currency')) $('set-currency').value = settings.currency;
       if ($('set-api')) $('set-api').value = API_BASE;
       setText('set-api-status', `Aktiv: ${API_BASE}`);
     }
 
-    function changeCurrency(cur) {
+    function changeCurrency(cur){
       settings.currency = cur;
       saveSettings();
       renderHome();
@@ -1744,7 +1390,7 @@
       if (detailAsset) renderDetail(detailAsset.id, detailAsset.type);
     }
 
-    function confirmClearAll() {
+    function confirmClearAll(){
       openModal(`
         <div class="modal-title">Alle Daten loeschen?</div>
         <div class="page-sub" style="text-align:center;margin-bottom:14px;">Positionen, Preise und Cache werden geloescht.</div>
@@ -1755,7 +1401,7 @@
       `);
     }
 
-    function doClearAll() {
+    function doClearAll(){
       transactions = [];
       manualPrices = {};
       priceCache = {};
@@ -1772,7 +1418,7 @@
       showScreen('home');
     }
 
-    function showScreen(id) {
+    function showScreen(id){
       if (id !== 'detail') prevScreen = currentScreen;
       currentScreen = id;
 
@@ -1789,10 +1435,10 @@
       if (id === 'add') resetAddForm();
       if (id === 'settings') initSettings();
 
-      window.scrollTo(0, 0);
+      window.scrollTo(0,0);
     }
 
-    function goBack() {
+    function goBack(){
       showScreen(prevScreen);
     }
 
@@ -1811,11 +1457,9 @@
           }, 400);
         }
       } catch (e) {
-        console.error('init failed:', e);
+        console.error('init failed', e);
         const root = $('app-root');
-        if (root) {
-          root.innerHTML = `<div class="error-box">Initialisierungsfehler:\n${String(e.message || e)}</div>`;
-        }
+        if (root) root.innerHTML = `<div class="error-box">Initialisierungsfehler:\n${String(e.message || e)}</div>`;
       }
     });
   </script>
