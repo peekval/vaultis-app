@@ -1,102 +1,234 @@
-// ===============================
-// CONFIG
-// ===============================
-const FINNHUB_API_KEY = "DEIN_FINNHUB_API_KEY"; // https://finnhub.io
-const METAL_API = "https://api.metals.live/v1/spot";
+// api/quote.js
+// GET /api/quote?symbol=AAPL&type=stock&currency=CHF
 
-// ===============================
-// PUBLIC FUNCTION (GLOBAL)
-// ===============================
-window.getLivePrice = async function(symbol, type) {
-  try {
-    if (type === "crypto") return await getCrypto(symbol);
-    if (type === "metal") return await getMetal(symbol);
-    return await getStock(symbol);
-  } catch (e) {
-    console.error("Final error:", e);
-    return null;
-  }
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// ===============================
-// STOCKS (Finnhub -> Yahoo fallback)
-// ===============================
-async function getStock(symbol) {
-  try {
-    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`);
-    const data = await res.json();
+function setCors(res) {
+  Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
+}
 
-    if (data && data.c && data.c !== 0) {
-      return data.c;
+async function readJson(res) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function fetchJson(url, options = {}) {
+  const res = await fetch(url, options);
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+  }
+
+  return data;
+}
+
+// ── FX: USD → target ─────────────────────────────────────────
+async function usdRate(currency) {
+  if (currency === 'USD') return 1;
+
+  const FALLBACK = { CHF: 0.88, EUR: 0.92, GBP: 0.79 };
+
+  try {
+    const d = await fetchJson('https://api.coinbase.com/v2/exchange-rates?currency=USD');
+    const v = parseFloat(d?.data?.rates?.[currency]);
+    return Number.isFinite(v) && v > 0 ? v : (FALLBACK[currency] || 1);
+  } catch {
+    return FALLBACK[currency] || 1;
+  }
+}
+
+// ── CRYPTO — CoinGecko only (safer) ──────────────────────────
+async function cryptoQuote(id, currency) {
+  const cur = currency.toLowerCase();
+  const key = process.env.COINGECKO_API_KEY;
+
+  const d = await fetchJson(
+    `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=${cur},usd&include_24hr_change=true`,
+    key ? { headers: { 'x-cg-demo-api-key': key } } : {}
+  );
+
+  const entry = d?.[id];
+  if (!entry) return null;
+
+  const price = entry[cur] ?? entry.usd;
+  if (typeof price !== 'number' || price <= 0) return null;
+
+  return {
+    symbol: id,
+    type: 'crypto',
+    price,
+    currency,
+    change24h: entry[`${cur}_24h_change`] ?? entry.usd_24h_change ?? 0,
+    source: 'coingecko',
+    lastUpdated: Date.now(),
+  };
+}
+
+// ── STOCK / ETF — Finnhub primary, Yahoo fallback ────────────
+async function stockQuote(symbol, type, currency) {
+  const finnKey = process.env.FINNHUB_API_KEY;
+
+  if (finnKey) {
+    try {
+      const d = await fetchJson(
+        `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${finnKey}`
+      );
+
+      if (typeof d?.c === 'number' && d.c > 0) {
+        let price = d.c;
+        let prev = typeof d.pc === 'number' ? d.pc : 0;
+        let outCur = 'USD';
+
+        if (currency !== 'USD') {
+          const rate = await usdRate(currency);
+          price = price * rate;
+          prev = prev > 0 ? prev * rate : 0;
+          outCur = currency;
+        }
+
+        const chg = prev > 0 ? ((price - prev) / prev) * 100 : 0;
+
+        return {
+          symbol,
+          type,
+          price,
+          currency: outCur,
+          change24h: chg,
+          source: 'finnhub',
+          lastUpdated: (d.t || Date.now() / 1000) * 1000,
+        };
+      }
+    } catch (e) {
+      console.warn('[stock] finnhub:', e.message);
+    }
+  }
+
+  try {
+    const d = await fetchJson(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}`
+    );
+
+    const result = d?.chart?.result?.[0];
+    const meta = result?.meta;
+
+    const priceUsd = parseFloat(meta?.regularMarketPrice);
+    const prevUsd = parseFloat(meta?.previousClose);
+
+    if (!(priceUsd > 0)) return null;
+
+    let price = priceUsd;
+    let prev = prevUsd;
+    let outCur = 'USD';
+
+    if (currency !== 'USD') {
+      const rate = await usdRate(currency);
+      price = priceUsd * rate;
+      prev = prevUsd > 0 ? prevUsd * rate : 0;
+      outCur = currency;
     }
 
-    throw "Finnhub failed";
-  } catch {
-    return await getYahoo(symbol);
-  }
-}
+    const chg = prev > 0 ? ((price - prev) / prev) * 100 : 0;
 
-// ===============================
-// YAHOO FALLBACK (FREE)
-// ===============================
-async function getYahoo(symbol) {
-  try {
-    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`);
-    const data = await res.json();
-
-    const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    return price || null;
-  } catch (e) {
-    console.error("Yahoo failed:", e);
-    return null;
-  }
-}
-
-// ===============================
-// CRYPTO (CoinGecko FREE)
-// ===============================
-async function getCrypto(symbol) {
-  try {
-    const map = {
-      BTC: "bitcoin",
-      ETH: "ethereum",
-      SOL: "solana"
+    return {
+      symbol,
+      type,
+      price,
+      currency: outCur,
+      change24h: chg,
+      source: 'yahoo',
+      lastUpdated: Date.now(),
     };
-
-    const id = map[symbol.toUpperCase()];
-    if (!id) return null;
-
-    const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=chf`);
-    const data = await res.json();
-
-    return data?.[id]?.chf || null;
   } catch (e) {
-    console.error("Crypto error:", e);
+    console.warn('[stock] yahoo:', e.message);
     return null;
   }
 }
 
-// ===============================
-// METALS (FREE)
-// ===============================
-async function getMetal(symbol) {
+// ── METAL — metals.live ──────────────────────────────────────
+const METAL_KEY = {
+  gold: 'gold',
+  silver: 'silver',
+  platinum: 'platinum',
+  palladium: 'palladium',
+};
+
+async function metalQuote(id, currency) {
+  const key = METAL_KEY[String(id || '').toLowerCase()];
+  if (!key) return null;
+
   try {
-    const res = await fetch(METAL_API);
-    const data = await res.json();
+    const data = await fetchJson('https://api.metals.live/v1/spot');
+    if (!Array.isArray(data)) return null;
 
-    const map = {
-      gold: "gold",
-      silver: "silver",
-      platinum: "platinum"
+    const spot = {};
+    for (const obj of data) Object.assign(spot, obj);
+
+    const priceUsd = spot[key];
+    if (typeof priceUsd !== 'number' || priceUsd <= 0) return null;
+
+    const rate = await usdRate(currency);
+
+    return {
+      symbol: id,
+      type: 'metal',
+      price: priceUsd * rate,
+      currency,
+      change24h: 0,
+      source: 'metals.live',
+      lastUpdated: Date.now(),
     };
-
-    const metal = map[symbol.toLowerCase()];
-    if (!metal) return null;
-
-    const found = data.find(x => Object.keys(x)[0] === metal);
-    return found?.[metal] || null;
   } catch (e) {
-    console.error("Metal error:", e);
+    console.warn('[metal] metals.live:', e.message);
     return null;
+  }
+}
+
+// ── HANDLER ──────────────────────────────────────────────────
+export default async function handler(req, res) {
+  try {
+    setCors(res);
+
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const symbol = String(req.query.symbol || '').trim();
+    const type = String(req.query.type || '').trim().toLowerCase();
+    const cur = String(req.query.currency || 'USD').trim().toUpperCase();
+
+    if (!symbol) return res.status(400).json({ error: 'symbol ist erforderlich' });
+    if (!type) return res.status(400).json({ error: 'type ist erforderlich' });
+
+    if (!['crypto', 'stock', 'etf', 'metal'].includes(type)) {
+      return res.status(400).json({ error: 'type muss crypto|stock|etf|metal sein' });
+    }
+
+    let result = null;
+
+    if (type === 'crypto') result = await cryptoQuote(symbol, cur);
+    else if (type === 'metal') result = await metalQuote(symbol, cur);
+    else result = await stockQuote(symbol, type, cur);
+
+    if (!result) {
+      return res.status(404).json({ error: `Preis für ${symbol} nicht verfügbar` });
+    }
+
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error('[api/quote] crash:', e);
+    return res.status(500).json({
+      error: e && e.message ? e.message : 'Server error',
+      code: 'QUOTE_CRASH',
+    });
   }
 }
