@@ -46,7 +46,7 @@ async function usdRate(currency) {
   }
 }
 
-// ── CRYPTO — CoinGecko only (safer) ──────────────────────────
+// ── CRYPTO — CoinGecko only ──────────────────────────────────
 async function cryptoQuote(id, currency) {
   const cur = currency.toLowerCase();
   const key = process.env.COINGECKO_API_KEY;
