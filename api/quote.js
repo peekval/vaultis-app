@@ -7,6 +7,39 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// ── In-Memory Cache + Dedup ──
+// Schützt vor Alpha-Vantage/Finnhub Rate-Limits wenn viele User gleichzeitig
+// oder wenn eine Seite viele Symbole parallel lädt (Markets-Screen).
+const _cache = new Map();
+const _inflight = new Map();
+
+const QUOTE_TTL_MS = {
+  crypto: 30 * 1000,       // 30s — Crypto bewegt sich schnell
+  stock:  60 * 1000,       // 60s
+  etf:    60 * 1000,
+  metal:  2 * 60 * 1000,   // 2min — bewegt sich langsam
+};
+
+function cacheGet(key) {
+  const e = _cache.get(key);
+  if (!e) return null;
+  if (Date.now() > e.expiresAt) { _cache.delete(key); return null; }
+  return e.data;
+}
+function cacheSet(key, data, ttl) {
+  _cache.set(key, { data, expiresAt: Date.now() + ttl });
+  if (_cache.size > 300) {
+    const now = Date.now();
+    for (const [k, v] of _cache) if (v.expiresAt < now) _cache.delete(k);
+  }
+}
+async function withDedup(key, fn) {
+  if (_inflight.has(key)) return _inflight.get(key);
+  const p = fn().finally(() => _inflight.delete(key));
+  _inflight.set(key, p);
+  return p;
+}
+
 // ── FX: USD → target ─────────────────────────────────────────
 async function usdRate(currency) {
   if (currency === 'USD') return 1;
@@ -196,15 +229,30 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `type muss crypto|stock|etf|metal sein` });
   }
 
+  // ── Cache-Check ──
+  const cacheKey = `q:${type}:${symbol.toLowerCase()}:${cur}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(cached);
+  }
+
   try {
-    let result = null;
-    if (type === 'crypto') result = await cryptoQuote(symbol, cur);
-    else if (type === 'metal') result = await metalQuote(symbol, cur);
-    else /* stock | etf */ result = await stockQuote(symbol, type);
+    // Dedup: paralleles Hämmern auf dasselbe Symbol → nur 1 Outbound-Request
+    const result = await withDedup(cacheKey, async () => {
+      if (type === 'crypto') return cryptoQuote(symbol, cur);
+      if (type === 'metal')  return metalQuote(symbol, cur);
+      return stockQuote(symbol, type);   // stock | etf
+    });
 
     if (!result) {
+      // Negative result kurz cachen (10s) damit nicht hundertfach retry-gehämmert wird
+      cacheSet(cacheKey, null, 10 * 1000);
       return res.status(404).json({ error: `Preis für ${symbol} nicht verfügbar` });
     }
+
+    cacheSet(cacheKey, result, QUOTE_TTL_MS[type] || 60 * 1000);
+    res.setHeader('X-Cache', 'MISS');
     return res.status(200).json(result);
   } catch (e) {
     console.error('[api/quote]', e);
