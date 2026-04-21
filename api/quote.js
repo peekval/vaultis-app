@@ -22,9 +22,15 @@ const QUOTE_TTL_MS = {
 
 function cacheGet(key) {
   const e = _cache.get(key);
-  if (!e) return null;
-  if (Date.now() > e.expiresAt) { _cache.delete(key); return null; }
-  return e.data;
+  if (!e) return undefined;
+  if (Date.now() > e.expiresAt) { _cache.delete(key); return undefined; }
+  return e.data;   // kann null sein (negative cache) oder echtes Objekt
+}
+function cacheHas(key) {
+  const e = _cache.get(key);
+  if (!e) return false;
+  if (Date.now() > e.expiresAt) { _cache.delete(key); return false; }
+  return true;
 }
 function cacheSet(key, data, ttl) {
   _cache.set(key, { data, expiresAt: Date.now() + ttl });
@@ -232,25 +238,27 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `type muss crypto|stock|etf|metal sein` });
   }
 
-  // ── Cache-Check ──
+  // ── Cache-Check: nur POSITIVE Cache-Hits returnen ──
+  // Negative Cache-Einträge werden NICHT aus dem Handler returned,
+  // sonst bekommt der User tagelang keinen Preis obwohl das Problem weg ist.
   const cacheKey = `q:${type}:${symbol.toLowerCase()}:${cur}`;
   const cached = cacheGet(cacheKey);
-  if (cached) {
+  if (cached && typeof cached.price === 'number' && cached.price > 0) {
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(cached);
   }
 
   try {
-    // Dedup: paralleles Hämmern auf dasselbe Symbol → nur 1 Outbound-Request
     const result = await withDedup(cacheKey, async () => {
       if (type === 'crypto') return cryptoQuote(symbol, cur);
       if (type === 'metal')  return metalQuote(symbol, cur);
       return stockQuote(symbol, type);   // stock | etf
     });
 
-    if (!result) {
-      // Negative result kurz cachen (10s) damit nicht hundertfach retry-gehämmert wird
-      cacheSet(cacheKey, null, 10 * 1000);
+    if (!result || typeof result.price !== 'number' || result.price <= 0) {
+      // KEIN negativer Cache — jeder neue Request soll es wieder probieren.
+      // Rate-Limits werden bereits durch Frontend (_failedFetches) gedrosselt.
+      res.setHeader('X-Cache', 'MISS-NULL');
       return res.status(404).json({ error: `Preis für ${symbol} nicht verfügbar` });
     }
 
