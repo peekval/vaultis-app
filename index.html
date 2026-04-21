@@ -1422,12 +1422,49 @@ async function fetchQuote(id, type) {
   return null;
 }
 
+// ── Chart-Cache (localStorage) ──
+// Verhindert erneute API-Calls wenn User zwischen Ranges hin-und-her klickt.
+// TTL pro Range: kürzere Ranges kürzer cachen.
+const HIST_TTL_MS = {
+  '7d':  3 * 60 * 1000,
+  '1m': 10 * 60 * 1000,
+  '6m': 30 * 60 * 1000,
+  '1y': 60 * 60 * 1000,
+  'all':2 * 60 * 60 * 1000,
+};
+function histCacheGet(id, type, range, cur) {
+  try {
+    const k = `v3_chart_${type}_${id}_${range}_${cur}`;
+    const raw = localStorage.getItem(k);
+    if (!raw) return null;
+    const { data, at } = JSON.parse(raw);
+    const ttl = HIST_TTL_MS[range] || 10 * 60 * 1000;
+    if (Date.now() - at > ttl) { localStorage.removeItem(k); return null; }
+    return data;
+  } catch { return null; }
+}
+function histCacheSet(id, type, range, cur, data) {
+  try {
+    const k = `v3_chart_${type}_${id}_${range}_${cur}`;
+    localStorage.setItem(k, JSON.stringify({ data, at: Date.now() }));
+  } catch {}
+}
+
 async function fetchHist(id, type, range) {
+  // 1) LocalStorage-Cache-Check
+  const cached = histCacheGet(id, type, range, cfg.cur);
+  if (cached) return cached;
+
+  // 2) API mit Retry
   let r = await safeFetch(apiUrl(`/api/history?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&range=${range}&currency=${cfg.cur}`), 14000);
-  // Retry bei Fehler oder leerem Result
   if (!r.data || !Array.isArray(r.data?.points) || r.data.points.length < 2) {
     await new Promise(res => setTimeout(res, 400));
     r = await safeFetch(apiUrl(`/api/history?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&range=${range}&currency=${cfg.cur}`), 20000);
+  }
+
+  // 3) Erfolgreich → cachen
+  if (r.data && Array.isArray(r.data.points) && r.data.points.length >= 2) {
+    histCacheSet(id, type, range, cfg.cur, r.data);
   }
   return r.data;
 }
@@ -1514,15 +1551,28 @@ function totals(positions) {
 // ============================================================
 // REFRESH
 // ============================================================
+/**
+ * runInPool — führt async-Tasks mit fixer Parallelität aus.
+ * Verhindert dass 100 Requests gleichzeitig losgehen (→ Rate-Limits).
+ */
+async function runInPool(items, worker, concurrency = 4) {
+  const queue = [...items];
+  const runners = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+    while (queue.length) {
+      const item = queue.shift();
+      try { await worker(item); } catch {}
+    }
+  });
+  await Promise.all(runners);
+}
+
 async function refreshAll() {
   try {
     const pos = getPositions();
     if (!pos.length) { toast('Keine Positionen', ''); return; }
     toast('Aktualisiere…', '');
-    for (const p of pos) {
-      if (manualPrices[p.asset.id]) continue;
-      await fetchQuote(p.asset.id, p.type);
-    }
+    const tasks = pos.filter(p => !manualPrices[p.asset.id]);
+    await runInPool(tasks, (p) => fetchQuote(p.asset.id, p.type), 4);
     renderHome(); renderPortfolio(); renderMarkets();
     toast('Kurse aktualisiert', 'ok');
   } catch(e) { devWarn('[refresh]', e.message); toast('Update fehlgeschlagen', 'warn'); }
@@ -2438,32 +2488,64 @@ function renderMarkets() {
   } catch(e) { devWarn('[renderMarkets]', e.message); }
 }
 
+// Tried-and-failed Tracker — verhindert dass ein rate-limitetes
+// Symbol nach jedem Re-Render wieder angefragt wird.
+// Entry: { at: timestamp }. Cooldown 2 Minuten.
+const _failedFetches = new Map();
+const FAIL_COOLDOWN_MS = 2 * 60 * 1000;
+function isFailedRecently(id) {
+  const e = _failedFetches.get(id);
+  if (!e) return false;
+  if (Date.now() - e.at > FAIL_COOLDOWN_MS) { _failedFetches.delete(id); return false; }
+  return true;
+}
+function markFailed(id) { _failedFetches.set(id, { at: Date.now() }); }
+function clearFailed(id) { _failedFetches.delete(id); }
+
 async function prefetchVisible(assets) {
-  let any = false;
-  for (const a of assets) {
-    if (manualPrices[a.id]) continue;
+  // Nur Assets ohne frischen Cache und ohne recent failure anfragen
+  const tasks = assets.filter(a => {
+    if (manualPrices[a.id]) return false;
     const cached = pCache[a.id];
-    if (cached && (Date.now() - (cached.at || 0)) < 60000) continue;
+    if (cached && (Date.now() - (cached.at || 0)) < 60000) return false;
+    if (isFailedRecently(a.id)) return false;
+    return true;
+  });
+  if (!tasks.length) return;
+
+  let doneCount = 0;
+
+  // Parallel mit Pool — 4 gleichzeitig. Nach jedem 5. Erfolg progressiv re-rendern.
+  await runInPool(tasks, async (a) => {
     const r = await fetchQuote(a.id, a.type);
-    if (r) any = true;
-  }
-  if (any && curS === 'markets') {
-    // direkt DOM patchen ohne renderMarkets erneut aufzurufen
-    const el = $('mk-list');
-    if (!el) return;
-    document.querySelectorAll('#mk-list .prow').forEach((row, i) => {});
-    // Einfacher: kompletter Re-Render OHNE Prefetch-Trigger
-    const q = ($('mk-inp')?.value || '').trim().toLowerCase();
-    let list = allA();
-    if (mfFilter !== 'all') list = list.filter(a => a.type === mfFilter);
-    if (q) list = list.filter(a => a.sym.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) || (a.id && a.id.toLowerCase().includes(q)) || (a.desc && a.desc.toLowerCase().includes(q)) || (a.exch && a.exch.toLowerCase().includes(q)) || (a.prov && a.prov.toLowerCase().includes(q)) || (a.isin && a.isin.toLowerCase().includes(q)));
-    list.sort((a,b) => a.name.localeCompare(b.name, 'de'));
-    const grps = {};
-    list.forEach(a => { const l = a.name.charAt(0).toUpperCase(); if (!grps[l]) grps[l] = []; grps[l].push(a); });
-    el.innerHTML = Object.keys(grps).sort().map(l =>
-      `<div class="lgr"><div class="llbl">${l}</div><div class="plist">${grps[l].map(a => mkRow(a)).join('')}</div></div>`
-    ).join('');
-  }
+    if (r) {
+      clearFailed(a.id);
+      doneCount++;
+      if (curS === 'markets' && doneCount % 5 === 0) {
+        rerenderMarketsList();
+      }
+    } else {
+      markFailed(a.id);
+    }
+  }, 4);
+
+  if (curS === 'markets') rerenderMarketsList();
+}
+
+// Hilfs-Funktion: Markets-Liste neu rendern OHNE prefetch neu zu triggern
+function rerenderMarketsList() {
+  const el = $('mk-list');
+  if (!el) return;
+  const q = ($('mk-inp')?.value || '').trim().toLowerCase();
+  let list = allA();
+  if (mfFilter !== 'all') list = list.filter(a => a.type === mfFilter);
+  if (q) list = list.filter(a => a.sym.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) || (a.id && a.id.toLowerCase().includes(q)) || (a.desc && a.desc.toLowerCase().includes(q)) || (a.exch && a.exch.toLowerCase().includes(q)) || (a.prov && a.prov.toLowerCase().includes(q)) || (a.isin && a.isin.toLowerCase().includes(q)));
+  list.sort((a,b) => a.name.localeCompare(b.name, 'de'));
+  const grps = {};
+  list.forEach(a => { const l = a.name.charAt(0).toUpperCase(); if (!grps[l]) grps[l] = []; grps[l].push(a); });
+  el.innerHTML = Object.keys(grps).sort().map(l =>
+    `<div class="lgr"><div class="llbl">${l}</div><div class="plist">${grps[l].map(a => mkRow(a)).join('')}</div></div>`
+  ).join('');
 }
 
 function mkRow(a) {
