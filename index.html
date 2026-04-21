@@ -956,8 +956,10 @@ html, body {
   </div>
   <div class="card" style="margin-top:12px">
     <div class="card-title" style="margin-bottom:14px">API Base URL</div>
-    <input class="finp" id="set-api" placeholder="https://project-wtf8r.vercel.app" oninput="setAPI(this.value)">
+    <input class="finp" id="set-api" placeholder="https://dein-deployment.vercel.app" oninput="setAPI(this.value)">
     <div class="fhint" id="set-api-st" style="margin-top:8px"></div>
+    <button class="btn btn-g btn-sm" style="margin-top:12px" onclick="testAPI()">Verbindung testen</button>
+    <div id="api-test-result" style="margin-top:10px;font-size:12px;color:var(--text-3);font-feature-settings:'tnum'"></div>
   </div>
   <div class="card" style="margin-top:12px">
     <button class="btn btn-d" onclick="confirmClear()">Alle Daten löschen</button>
@@ -985,7 +987,18 @@ html, body {
 // ============================================================
 // CONFIG
 // ============================================================
-const API_DEFAULT = 'https://project-wtf8r.vercel.app';
+// Auto-Detection: Wenn App auf Vercel-Domain läuft, nutze gleiche Origin für API.
+// Sonst falle auf hardcoded Default zurück.
+const API_DEFAULT = (() => {
+  try {
+    const host = location.hostname;
+    // Falls wir auf vercel.app laufen, nutze die gleiche Origin
+    if (host.endsWith('.vercel.app') || host === 'localhost' || host === '127.0.0.1') {
+      return location.origin;
+    }
+  } catch {}
+  return 'https://project-wtf8r.vercel.app';
+})();
 let API = (()=>{ try { return localStorage.getItem('vaultis_api') || API_DEFAULT; } catch { return API_DEFAULT; }})();
 const SK = { TXN:'v3_txn', MAN:'v3_man', PC:'v3_pc', HC:'v3_hc', SET:'v3_set' };
 
@@ -2948,6 +2961,36 @@ function setAPI(v) {
   API = v.trim() || API_DEFAULT;
   try { localStorage.setItem('vaultis_api', API); } catch(e){}
   safeText('set-api-st', 'Aktiv: ' + API);
+}
+
+async function testAPI() {
+  const resEl = $('api-test-result');
+  if (!resEl) return;
+  resEl.innerHTML = '<span class="spin"></span> Teste…';
+  const testUrl = apiUrl('/api/quote?symbol=bitcoin&type=crypto&currency=CHF');
+  const startT = Date.now();
+  try {
+    const res = await Promise.race([
+      fetch(testUrl),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000))
+    ]);
+    const ms = Date.now() - startT;
+    if (!res.ok) {
+      let body = '';
+      try { body = await res.text(); } catch {}
+      resEl.innerHTML = `<span style="color:var(--neg)">✗ HTTP ${res.status}</span> · ${ms}ms<br><span style="color:var(--text-3);font-size:11px">${body.slice(0, 200)}</span>`;
+      return;
+    }
+    const data = await res.json();
+    if (data && typeof data.price === 'number' && data.price > 0) {
+      resEl.innerHTML = `<span style="color:var(--pos)">✓ OK</span> · ${ms}ms · Bitcoin: ${fmt(data.price)} · Quelle: ${data.source || 'unknown'}`;
+    } else {
+      resEl.innerHTML = `<span style="color:var(--warn)">⚠ Antwort ohne gültigen Preis</span> · ${ms}ms<br><span style="color:var(--text-3);font-size:11px">${JSON.stringify(data).slice(0, 200)}</span>`;
+    }
+  } catch (e) {
+    const ms = Date.now() - startT;
+    resEl.innerHTML = `<span style="color:var(--neg)">✗ Fehler</span> · ${ms}ms<br><span style="color:var(--text-3);font-size:11px">${e.message}</span>`;
+  }
 }
 function confirmClear() {
   openM(`<div class="mh"></div><div class="mt">Alle Daten löschen?</div>
