@@ -371,6 +371,25 @@ html, body {
   font-size: 12px; color: var(--text-3);
   margin-top: 14px; font-weight: 500; font-feature-settings: 'tnum';
 }
+.chart-readout {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; margin-bottom: 14px; min-height: 44px;
+}
+.chart-readout-left { display: flex; flex-direction: column; gap: 2px; }
+.chart-readout-date {
+  font-size: 11px; color: var(--text-3); font-weight: 600;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  font-feature-settings: 'tnum';
+}
+.chart-readout-price {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.03em;
+  color: var(--text); font-feature-settings: 'tnum';
+}
+.chart-readout-right {
+  font-size: 14px; font-weight: 700;
+  font-feature-settings: 'tnum';
+  align-self: flex-end;
+}
 
 /* ── Search ─────────────────────────────────────────────────── */
 .sbox { position: relative; margin-bottom: 14px; }
@@ -1100,6 +1119,27 @@ crypto:[
   {id:'arbitrum',           sym:'ARB',    name:'Arbitrum',             icon:'△',  col:'#28a0f0',bg:'rgba(40,160,240,0.15)', cat:'Layer 2',  desc:'Optimistic Rollup auf Ethereum.'},
   {id:'pepe',               sym:'PEPE',   name:'Pepe',                 icon:'🐸', col:'#00a852',bg:'rgba(0,168,82,0.15)',   cat:'Meme',     desc:'Meme-Coin basierend auf Pepe the Frog.'},
   {id:'shiba-inu',          sym:'SHIB',   name:'Shiba Inu',            icon:'🐕', col:'#ffa409',bg:'rgba(255,164,9,0.15)',  cat:'Meme',     desc:'Ethereum-basierter Meme-Coin.'},
+  {id:'tron',               sym:'TRX',    name:'Tron',                 icon:'T',  col:'#ef0027',bg:'rgba(239,0,39,0.15)',   cat:'Layer 1',  desc:'Blockchain für Content-Monetarisierung.'},
+  {id:'stellar',            sym:'XLM',    name:'Stellar',              icon:'★',  col:'#14b6e7',bg:'rgba(20,182,231,0.15)', cat:'Payments', desc:'Zahlungsnetzwerk für grenzüberschreitende Transfers.'},
+  {id:'cosmos',             sym:'ATOM',   name:'Cosmos',               icon:'⚛',  col:'#2e3148',bg:'rgba(46,49,72,0.15)',   cat:'Layer 0',  desc:'Inter-Blockchain Communication Protocol.'},
+  {id:'monero',             sym:'XMR',    name:'Monero',               icon:'M',  col:'#ff6600',bg:'rgba(255,102,0,0.15)',  cat:'Privacy',  desc:'Privacy-fokussierte Kryptowährung.'},
+  {id:'ethereum-classic',   sym:'ETC',    name:'Ethereum Classic',     icon:'Ξ',  col:'#328332',bg:'rgba(50,131,50,0.15)',  cat:'Layer 1',  desc:'Original Ethereum-Blockchain nach dem DAO-Fork.'},
+  {id:'filecoin',            sym:'FIL',   name:'Filecoin',             icon:'F',  col:'#0090ff',bg:'rgba(0,144,255,0.15)',  cat:'Storage',  desc:'Dezentrales Speichernetzwerk.'},
+  {id:'internet-computer',  sym:'ICP',    name:'Internet Computer',    icon:'∞',  col:'#3b00b9',bg:'rgba(59,0,185,0.15)',   cat:'Layer 1',  desc:'Smart-Contract-Plattform von DFINITY.'},
+  {id:'render-token',       sym:'RNDR',   name:'Render',               icon:'R',  col:'#cf1f49',bg:'rgba(207,31,73,0.15)',  cat:'AI/Compute',desc:'Dezentrales GPU-Rendering-Netzwerk.'},
+  {id:'injective-protocol', sym:'INJ',    name:'Injective',            icon:'◈',  col:'#00f2fe',bg:'rgba(0,242,254,0.15)',  cat:'DeFi',     desc:'Layer-1 für dezentrale Derivate.'},
+  {id:'optimism',           sym:'OP',     name:'Optimism',             icon:'O',  col:'#ff0420',bg:'rgba(255,4,32,0.15)',   cat:'Layer 2',  desc:'Optimistic Rollup auf Ethereum.'},
+  {id:'maker',              sym:'MKR',    name:'Maker',                icon:'M',  col:'#1aab9b',bg:'rgba(26,171,155,0.15)', cat:'DeFi',     desc:'DAO hinter dem DAI-Stablecoin.'},
+  {id:'stacks',             sym:'STX',    name:'Stacks',               icon:'S',  col:'#5546ff',bg:'rgba(85,70,255,0.15)',  cat:'Bitcoin L2',desc:'Smart Contracts auf Bitcoin.'},
+  {id:'hedera-hashgraph',   sym:'HBAR',   name:'Hedera',               icon:'H',  col:'#000000',bg:'rgba(0,0,0,0.08)',      cat:'Layer 1',  desc:'Enterprise-Grade DLT mit Hashgraph-Consensus.'},
+  {id:'algorand',           sym:'ALGO',   name:'Algorand',             icon:'A',  col:'#000000',bg:'rgba(0,0,0,0.08)',      cat:'Layer 1',  desc:'Pure Proof-of-Stake Blockchain.'},
+  {id:'the-graph',          sym:'GRT',    name:'The Graph',            icon:'G',  col:'#6f4cff',bg:'rgba(111,76,255,0.15)', cat:'Infra',    desc:'Indexing-Protokoll für Blockchain-Daten.'},
+  {id:'immutable-x',        sym:'IMX',    name:'Immutable X',          icon:'I',  col:'#0b1421',bg:'rgba(11,20,33,0.15)',   cat:'Gaming L2',desc:'Layer-2 für NFTs und Gaming.'},
+  {id:'vechain',            sym:'VET',    name:'VeChain',              icon:'V',  col:'#15bdff',bg:'rgba(21,189,255,0.15)', cat:'Supply',   desc:'Supply-Chain-Blockchain.'},
+  {id:'fetch-ai',           sym:'FET',    name:'Fetch.ai',             icon:'F',  col:'#211d5f',bg:'rgba(33,29,95,0.15)',   cat:'AI',       desc:'Autonome KI-Agenten auf Blockchain.'},
+  {id:'jupiter-exchange-solana',sym:'JUP',name:'Jupiter',              icon:'J',  col:'#c7f284',bg:'rgba(199,242,132,0.15)',cat:'DeFi',     desc:'Führender DEX-Aggregator auf Solana.'},
+  {id:'worldcoin-wld',      sym:'WLD',    name:'Worldcoin',            icon:'◎',  col:'#000000',bg:'rgba(0,0,0,0.08)',      cat:'Identity', desc:'Proof-of-Personhood-Netzwerk.'},
+  {id:'sei-network',        sym:'SEI',    name:'Sei',                  icon:'S',  col:'#8f1d1d',bg:'rgba(143,29,29,0.15)',  cat:'Layer 1',  desc:'L1 optimiert für Trading-Anwendungen.'},
 ],
 
 etf:[
@@ -1169,6 +1209,73 @@ stock:[
   {id:'CVX',   sym:'CVX',   name:'Chevron Corporation',      icon:'C',col:'#1f4e8a',bg:'rgba(31,78,138,0.15)',  exch:'NYSE',   sect:'Energy',          ctry:'USA', desc:'Grosser US-Öl- und Gaskonzern.'},
   {id:'CAT',   sym:'CAT',   name:'Caterpillar Inc.',         icon:'C',col:'#ffcd11',bg:'rgba(255,205,17,0.15)', exch:'NYSE',   sect:'Industrials',     ctry:'USA', desc:'Bau- und Bergbaumaschinen.'},
   {id:'BA',    sym:'BA',    name:'Boeing Company',           icon:'B',col:'#1d4f91',bg:'rgba(29,79,145,0.15)',  exch:'NYSE',   sect:'Industrials',     ctry:'USA', desc:'Flugzeughersteller.'},
+  // Tech Extension
+  {id:'INTC',  sym:'INTC',  name:'Intel Corporation',        icon:'i',col:'#0071c5',bg:'rgba(0,113,197,0.15)',  exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Halbleiter-Pionier, CPUs und Foundry.'},
+  {id:'IBM',   sym:'IBM',   name:'IBM',                      icon:'I',col:'#0f62fe',bg:'rgba(15,98,254,0.15)',  exch:'NYSE',   sect:'Technology',      ctry:'USA', desc:'Enterprise-IT, Cloud, KI, Quantum Computing.'},
+  {id:'CSCO',  sym:'CSCO',  name:'Cisco Systems',            icon:'C',col:'#1ba0d7',bg:'rgba(27,160,215,0.15)', exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Netzwerk-Infrastruktur und Cybersecurity.'},
+  {id:'TXN',   sym:'TXN',   name:'Texas Instruments',        icon:'T',col:'#cc0000',bg:'rgba(204,0,0,0.15)',    exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Analog- und Embedded-Chips.'},
+  {id:'MU',    sym:'MU',    name:'Micron Technology',        icon:'M',col:'#0066cc',bg:'rgba(0,102,204,0.15)',  exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Speicherchips (DRAM, NAND).'},
+  {id:'LRCX',  sym:'LRCX',  name:'Lam Research',             icon:'L',col:'#005eb8',bg:'rgba(0,94,184,0.15)',   exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Halbleiter-Fertigungsanlagen.'},
+  {id:'AMAT',  sym:'AMAT',  name:'Applied Materials',        icon:'A',col:'#0076c0',bg:'rgba(0,118,192,0.15)',  exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Halbleiter- und Display-Fertigung.'},
+  {id:'KLAC',  sym:'KLAC',  name:'KLA Corporation',          icon:'K',col:'#1e3a8a',bg:'rgba(30,58,138,0.15)',  exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Process-Control für Halbleiter.'},
+  {id:'PANW',  sym:'PANW',  name:'Palo Alto Networks',       icon:'P',col:'#fa582d',bg:'rgba(250,88,45,0.15)',  exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Next-Gen Cybersecurity.'},
+  {id:'NET',   sym:'NET',   name:'Cloudflare',               icon:'C',col:'#f48120',bg:'rgba(244,129,32,0.15)', exch:'NYSE',   sect:'Technology',      ctry:'USA', desc:'CDN und Edge-Computing.'},
+  {id:'DDOG',  sym:'DDOG',  name:'Datadog',                  icon:'D',col:'#632ca6',bg:'rgba(99,44,166,0.15)',  exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Monitoring und Observability.'},
+  {id:'MDB',   sym:'MDB',   name:'MongoDB',                  icon:'M',col:'#13aa52',bg:'rgba(19,170,82,0.15)',  exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'NoSQL Datenbank-Plattform.'},
+  {id:'WDAY',  sym:'WDAY',  name:'Workday',                  icon:'W',col:'#0875e1',bg:'rgba(8,117,225,0.15)',  exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'HR- und Finanz-Cloud.'},
+  {id:'TEAM',  sym:'TEAM',  name:'Atlassian',                icon:'A',col:'#2684ff',bg:'rgba(38,132,255,0.15)', exch:'NASDAQ', sect:'Technology',      ctry:'AUS', desc:'Jira, Confluence, Trello.'},
+  {id:'ZS',    sym:'ZS',    name:'Zscaler',                  icon:'Z',col:'#0055b8',bg:'rgba(0,85,184,0.15)',   exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'Cloud-Security-Plattform.'},
+  {id:'SMCI',  sym:'SMCI',  name:'Super Micro Computer',     icon:'S',col:'#6a2777',bg:'rgba(106,39,119,0.15)', exch:'NASDAQ', sect:'Technology',      ctry:'USA', desc:'KI-Server und Storage.'},
+  // EV / Autos
+  {id:'F',     sym:'F',     name:'Ford Motor',               icon:'F',col:'#003478',bg:'rgba(0,52,120,0.15)',   exch:'NYSE',   sect:'Consumer Disc.',  ctry:'USA', desc:'Automobilhersteller.'},
+  {id:'GM',    sym:'GM',    name:'General Motors',           icon:'G',col:'#005a9c',bg:'rgba(0,90,156,0.15)',   exch:'NYSE',   sect:'Consumer Disc.',  ctry:'USA', desc:'Chevrolet, Cadillac, GMC.'},
+  {id:'RIVN',  sym:'RIVN',  name:'Rivian',                   icon:'R',col:'#001c2b',bg:'rgba(0,28,43,0.15)',    exch:'NASDAQ', sect:'Consumer Disc.',  ctry:'USA', desc:'Elektro-Pickup- und SUV-Hersteller.'},
+  // Consumer / Retail
+  {id:'TGT',   sym:'TGT',   name:'Target Corporation',       icon:'T',col:'#cc0000',bg:'rgba(204,0,0,0.15)',    exch:'NYSE',   sect:'Consumer Staples',ctry:'USA', desc:'US-Einzelhandelskette.'},
+  {id:'HD',    sym:'HD',    name:'Home Depot',               icon:'H',col:'#f96302',bg:'rgba(249,99,2,0.15)',   exch:'NYSE',   sect:'Consumer Disc.',  ctry:'USA', desc:'Grösster Heimwerker-Einzelhändler.'},
+  {id:'LOW',   sym:'LOW',   name:'Lowe\u2019s',              icon:'L',col:'#004990',bg:'rgba(0,73,144,0.15)',   exch:'NYSE',   sect:'Consumer Disc.',  ctry:'USA', desc:'Zweitgrösste US-Heimwerker-Kette.'},
+  {id:'SBUX',  sym:'SBUX',  name:'Starbucks',                icon:'S',col:'#006241',bg:'rgba(0,98,65,0.15)',    exch:'NASDAQ', sect:'Consumer Disc.',  ctry:'USA', desc:'Weltgrösste Kaffeehauskette.'},
+  {id:'CMG',   sym:'CMG',   name:'Chipotle Mexican Grill',   icon:'C',col:'#a81612',bg:'rgba(168,22,18,0.15)',  exch:'NYSE',   sect:'Consumer Disc.',  ctry:'USA', desc:'Fast-Casual Restaurant-Kette.'},
+  {id:'YUM',   sym:'YUM',   name:'Yum! Brands',              icon:'Y',col:'#b21e26',bg:'rgba(178,30,38,0.15)',  exch:'NYSE',   sect:'Consumer Disc.',  ctry:'USA', desc:'KFC, Pizza Hut, Taco Bell.'},
+  {id:'LULU',  sym:'LULU',  name:'Lululemon',                icon:'L',col:'#bd2023',bg:'rgba(189,32,35,0.15)',  exch:'NASDAQ', sect:'Consumer Disc.',  ctry:'CAN', desc:'Premium-Yoga- und Sportbekleidung.'},
+  // Media / Communications
+  {id:'CMCSA', sym:'CMCSA', name:'Comcast',                  icon:'C',col:'#a91009',bg:'rgba(169,16,9,0.15)',   exch:'NASDAQ', sect:'Communication',   ctry:'USA', desc:'Kabel, Breitband, NBCUniversal.'},
+  {id:'T',     sym:'T',     name:'AT&T',                     icon:'T',col:'#00a8e0',bg:'rgba(0,168,224,0.15)',  exch:'NYSE',   sect:'Communication',   ctry:'USA', desc:'Telekommunikations-Konzern.'},
+  {id:'VZ',    sym:'VZ',    name:'Verizon',                  icon:'V',col:'#cd040b',bg:'rgba(205,4,11,0.15)',   exch:'NYSE',   sect:'Communication',   ctry:'USA', desc:'Mobilfunk- und Breitbandanbieter.'},
+  {id:'SPOT',  sym:'SPOT',  name:'Spotify',                  icon:'S',col:'#1db954',bg:'rgba(29,185,84,0.15)',  exch:'NYSE',   sect:'Communication',   ctry:'SWE', desc:'Audio-Streaming-Plattform.'},
+  {id:'RBLX',  sym:'RBLX',  name:'Roblox',                   icon:'R',col:'#e53935',bg:'rgba(229,57,53,0.15)',  exch:'NYSE',   sect:'Communication',   ctry:'USA', desc:'Online-Gaming-Plattform.'},
+  {id:'EA',    sym:'EA',    name:'Electronic Arts',          icon:'E',col:'#ff4747',bg:'rgba(255,71,71,0.15)',  exch:'NASDAQ', sect:'Communication',   ctry:'USA', desc:'Videospiel-Publisher (FIFA, Madden).'},
+  {id:'TTD',   sym:'TTD',   name:'The Trade Desk',           icon:'T',col:'#e83e31',bg:'rgba(232,62,49,0.15)',  exch:'NASDAQ', sect:'Communication',   ctry:'USA', desc:'Programmatic-Advertising-Plattform.'},
+  // Financials / Fintech
+  {id:'MS',    sym:'MS',    name:'Morgan Stanley',           icon:'M',col:'#1e3564',bg:'rgba(30,53,100,0.15)',  exch:'NYSE',   sect:'Financials',      ctry:'USA', desc:'Investment Banking und Wealth Management.'},
+  {id:'WFC',   sym:'WFC',   name:'Wells Fargo',              icon:'W',col:'#d41e25',bg:'rgba(212,30,37,0.15)',  exch:'NYSE',   sect:'Financials',      ctry:'USA', desc:'Grossbank im Retail-Segment.'},
+  {id:'AXP',   sym:'AXP',   name:'American Express',         icon:'A',col:'#016fd0',bg:'rgba(1,111,208,0.15)',  exch:'NYSE',   sect:'Financials',      ctry:'USA', desc:'Premium-Kreditkarten und Travel.'},
+  {id:'SCHW',  sym:'SCHW',  name:'Charles Schwab',           icon:'S',col:'#00a0df',bg:'rgba(0,160,223,0.15)',  exch:'NYSE',   sect:'Financials',      ctry:'USA', desc:'Broker und Asset Manager.'},
+  {id:'COIN',  sym:'COIN',  name:'Coinbase',                 icon:'C',col:'#0052ff',bg:'rgba(0,82,255,0.15)',   exch:'NASDAQ', sect:'Financials',      ctry:'USA', desc:'Grösste US-Krypto-Börse.'},
+  {id:'HOOD',  sym:'HOOD',  name:'Robinhood',                icon:'H',col:'#00c805',bg:'rgba(0,200,5,0.15)',    exch:'NASDAQ', sect:'Financials',      ctry:'USA', desc:'Zero-Commission Broker-App.'},
+  {id:'SQ',    sym:'SQ',    name:'Block (Square)',           icon:'B',col:'#000000',bg:'rgba(0,0,0,0.08)',      exch:'NYSE',   sect:'Financials',      ctry:'USA', desc:'Square, Cash App, Afterpay.'},
+  // Healthcare Extension
+  {id:'TMO',   sym:'TMO',   name:'Thermo Fisher Scientific', icon:'T',col:'#d71920',bg:'rgba(215,25,32,0.15)',  exch:'NYSE',   sect:'Healthcare',      ctry:'USA', desc:'Labor- und Life-Science-Ausrüstung.'},
+  {id:'DHR',   sym:'DHR',   name:'Danaher',                  icon:'D',col:'#005eb8',bg:'rgba(0,94,184,0.15)',   exch:'NYSE',   sect:'Healthcare',      ctry:'USA', desc:'Diagnostik und Life Sciences.'},
+  {id:'ISRG',  sym:'ISRG',  name:'Intuitive Surgical',       icon:'I',col:'#0074c2',bg:'rgba(0,116,194,0.15)',  exch:'NASDAQ', sect:'Healthcare',      ctry:'USA', desc:'Roboter-Chirurgie (da Vinci).'},
+  {id:'VRTX',  sym:'VRTX',  name:'Vertex Pharmaceuticals',   icon:'V',col:'#002f87',bg:'rgba(0,47,135,0.15)',   exch:'NASDAQ', sect:'Healthcare',      ctry:'USA', desc:'Cystische Fibrose und Gentherapien.'},
+  // Industrials / Materials
+  {id:'GE',    sym:'GE',    name:'General Electric',         icon:'G',col:'#005eb8',bg:'rgba(0,94,184,0.15)',   exch:'NYSE',   sect:'Industrials',     ctry:'USA', desc:'Luftfahrt und Energieinfrastruktur.'},
+  {id:'HON',   sym:'HON',   name:'Honeywell',                icon:'H',col:'#e21d38',bg:'rgba(226,29,56,0.15)',  exch:'NASDAQ', sect:'Industrials',     ctry:'USA', desc:'Industrietechnologie-Mischkonzern.'},
+  {id:'UPS',   sym:'UPS',   name:'United Parcel Service',    icon:'U',col:'#351c15',bg:'rgba(53,28,21,0.15)',   exch:'NYSE',   sect:'Industrials',     ctry:'USA', desc:'Globaler Logistik- und Paketdienst.'},
+  {id:'FDX',   sym:'FDX',   name:'FedEx',                    icon:'F',col:'#4d148c',bg:'rgba(77,20,140,0.15)',  exch:'NYSE',   sect:'Industrials',     ctry:'USA', desc:'Express-Versand und Logistik.'},
+  {id:'DE',    sym:'DE',    name:'Deere & Company',          icon:'D',col:'#367c2b',bg:'rgba(54,124,43,0.15)',  exch:'NYSE',   sect:'Industrials',     ctry:'USA', desc:'Landmaschinen (John Deere).'},
+  {id:'LMT',   sym:'LMT',   name:'Lockheed Martin',          icon:'L',col:'#0033a0',bg:'rgba(0,51,160,0.15)',   exch:'NYSE',   sect:'Industrials',     ctry:'USA', desc:'Luft- und Raumfahrt, Verteidigung.'},
+  {id:'RTX',   sym:'RTX',   name:'RTX Corporation',          icon:'R',col:'#d3222a',bg:'rgba(211,34,42,0.15)',  exch:'NYSE',   sect:'Industrials',     ctry:'USA', desc:'Raytheon, Pratt & Whitney, Collins Aerospace.'},
+  // Energy Extension
+  {id:'COP',   sym:'COP',   name:'ConocoPhillips',           icon:'C',col:'#e4002b',bg:'rgba(228,0,43,0.15)',   exch:'NYSE',   sect:'Energy',          ctry:'USA', desc:'Grosser unabhängiger Öl- und Gaskonzern.'},
+  {id:'SLB',   sym:'SLB',   name:'Schlumberger',             icon:'S',col:'#00aeef',bg:'rgba(0,174,239,0.15)',  exch:'NYSE',   sect:'Energy',          ctry:'USA', desc:'Öl- und Gas-Dienstleistungen.'},
+  // Utilities
+  {id:'NEE',   sym:'NEE',   name:'NextEra Energy',           icon:'N',col:'#005e20',bg:'rgba(0,94,32,0.15)',    exch:'NYSE',   sect:'Utilities',       ctry:'USA', desc:'Grösster US-Versorger, Erneuerbare.'},
+  {id:'DUK',   sym:'DUK',   name:'Duke Energy',              icon:'D',col:'#0072ce',bg:'rgba(0,114,206,0.15)',  exch:'NYSE',   sect:'Utilities',       ctry:'USA', desc:'US-Versorgungsunternehmen.'},
+  // Real Estate
+  {id:'PLD',   sym:'PLD',   name:'Prologis',                 icon:'P',col:'#00a39c',bg:'rgba(0,163,156,0.15)',  exch:'NYSE',   sect:'Real Estate',     ctry:'USA', desc:'Grösster Logistik-REIT weltweit.'},
+  {id:'O',     sym:'O',     name:'Realty Income',            icon:'O',col:'#004b87',bg:'rgba(0,75,135,0.15)',   exch:'NYSE',   sect:'Real Estate',     ctry:'USA', desc:'Monatlich ausschüttender Retail-REIT.'},
 ],
 
 metal:[
@@ -1842,13 +1949,21 @@ async function loadDetChart(a, type, range) {
     if (!el) return;
     window.__da = a; window.__dt = type;
 
-    const tabs = ['7d','1m','6m','1y'].map(r => {
-      const lbl = {'7d':'7T','1m':'1M','6m':'6M','1y':'1J'}[r];
-      return `<button class="ctab ${r===range?'on':''}" onclick="loadDetChart(window.__da,window.__dt,'${r}')">${lbl}</button>`;
-    }).join('');
+    const ranges = ['7d','1m','6m','1y','all'];
+    const labels = {'7d':'7T','1m':'1M','6m':'6M','1y':'1J','all':'MAX'};
+    const tabs = ranges.map(r =>
+      `<button class="ctab ${r===range?'on':''}" onclick="loadDetChart(window.__da,window.__dt,'${r}')">${labels[r]}</button>`
+    ).join('');
 
     el.innerHTML = `<div class="chart-card">
       <div class="ctabs">${tabs}</div>
+      <div id="dc-readout" class="chart-readout">
+        <div class="chart-readout-left">
+          <div class="chart-readout-date" id="dc-date">&nbsp;</div>
+          <div class="chart-readout-price" id="dc-price">&nbsp;</div>
+        </div>
+        <div class="chart-readout-right" id="dc-chg">&nbsp;</div>
+      </div>
       <div class="cwrap">
         <div id="dc-load" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-3);font-size:12px;text-align:center;padding:0 20px"><span class="spin" style="margin-right:8px"></span>Lade…</div>
         <canvas id="dc-canvas" style="display:none"></canvas>
@@ -1871,18 +1986,34 @@ async function loadDetChart(a, type, range) {
     const ldE = $('dc-load'), cvE = $('dc-canvas'), smE = $('dc-sum');
 
     if (!data || !Array.isArray(data.points) || data.points.length < 2) {
-      if (ldE) ldE.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:12px"><span>⚠ Keine historischen Daten für ${a.sym} (${range})</span><button class="hbtn" onclick="loadDetChart(window.__da,window.__dt,'${range}')">Erneut laden</button></div>`;
+      if (ldE) ldE.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:12px"><span>⚠ Keine historischen Daten für ${a.sym} (${labels[range]||range})</span><button class="hbtn" onclick="loadDetChart(window.__da,window.__dt,'${range}')">Erneut laden</button></div>`;
       return;
     }
 
     const acc = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#4f46e5';
-    const labels = data.points.map(pt => {
+    const posCol = getComputedStyle(document.documentElement).getPropertyValue('--pos').trim() || '#059669';
+    const negCol = getComputedStyle(document.documentElement).getPropertyValue('--neg').trim() || '#dc2626';
+
+    const labelArr = data.points.map(pt => {
       const d = new Date(pt.date);
       if (isNaN(d.getTime())) return pt.date;
-      return range === '7d'
-        ? d.toLocaleDateString('de-CH',{day:'2-digit',month:'short'}) + ' ' + String(d.getHours()).padStart(2,'0') + 'h'
-        : d.toLocaleDateString('de-CH',{day:'2-digit',month:'short',year:range==='1y'?'2-digit':undefined});
+      if (range === '7d') {
+        return d.toLocaleDateString('de-CH',{day:'2-digit',month:'short'}) + ' ' + String(d.getHours()).padStart(2,'0') + 'h';
+      }
+      if (range === 'all') {
+        return d.toLocaleDateString('de-CH',{month:'short',year:'2-digit'});
+      }
+      return d.toLocaleDateString('de-CH',{day:'2-digit',month:'short',year:range==='1y'?'2-digit':undefined});
     });
+    const fullDateLabels = data.points.map(pt => {
+      const d = new Date(pt.date);
+      if (isNaN(d.getTime())) return pt.date;
+      if (range === '7d') {
+        return d.toLocaleDateString('de-CH',{weekday:'short',day:'2-digit',month:'short'}) + ' · ' + String(d.getHours()).padStart(2,'0') + ':00';
+      }
+      return d.toLocaleDateString('de-CH',{day:'2-digit',month:'long',year:'numeric'});
+    });
+
     const vals = data.points.map(p => num(p.price)).filter(v => v > 0);
     if (vals.length < 2) {
       if (ldE) { ldE.style.display = 'flex'; ldE.innerHTML = `⚠ Keine gültigen Preisdaten für ${a.sym}`; }
@@ -1897,42 +2028,109 @@ async function loadDetChart(a, type, range) {
     const first = vals[0], last = vals[vals.length-1];
     const chg = first > 0 ? ((last - first) / first * 100) : 0;
     const cur = data.currency || cfg.cur;
+    const lineCol = chg >= 0 ? posCol : negCol;
+
+    // Readout default befüllen (letzter Punkt)
+    const setReadout = (idx) => {
+      const dE = $('dc-date'), pE = $('dc-price'), cE = $('dc-chg');
+      if (!dE || !pE || !cE) return;
+      if (idx < 0 || idx >= vals.length) {
+        dE.textContent = fullDateLabels[fullDateLabels.length-1] || '';
+        pE.textContent = fmt(last, cur, last < 10 ? 4 : 2);
+        cE.textContent = (chg >= 0 ? '↑ +' : '↓ ') + Math.abs(chg).toFixed(2) + '%';
+        cE.style.color = chg >= 0 ? 'var(--pos)' : 'var(--neg)';
+        return;
+      }
+      const v = vals[idx];
+      const startV = vals[0];
+      const localChg = startV > 0 ? ((v - startV) / startV * 100) : 0;
+      dE.textContent = fullDateLabels[idx] || '';
+      pE.textContent = fmt(v, cur, v < 10 ? 4 : 2);
+      cE.textContent = (localChg >= 0 ? '↑ +' : '↓ ') + Math.abs(localChg).toFixed(2) + '%';
+      cE.style.color = localChg >= 0 ? 'var(--pos)' : 'var(--neg)';
+    };
+    setReadout(-1);
+
+    // Crosshair Plugin
+    const crosshairPlugin = {
+      id: 'crosshair',
+      afterDraw: (chart) => {
+        const ac = chart.__activeX;
+        if (ac == null) return;
+        const ctx = chart.ctx;
+        const yScale = chart.scales.y;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(20,20,30,0.15)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4,4]);
+        ctx.beginPath();
+        ctx.moveTo(ac, yScale.top);
+        ctx.lineTo(ac, yScale.bottom);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
 
     detCh = new Chart(cvE, {
       type: 'line',
       data: {
-        labels,
+        labels: labelArr,
         datasets: [{
-          data: vals, borderColor: acc,
+          data: vals,
+          borderColor: lineCol,
           backgroundColor: ctx => {
             const g = ctx.chart.ctx.createLinearGradient(0,0,0,220);
-            g.addColorStop(0, h2r(acc, 0.18));
-            g.addColorStop(1, h2r(acc, 0.01));
+            g.addColorStop(0, h2r(lineCol, 0.22));
+            g.addColorStop(1, h2r(lineCol, 0.01));
             return g;
           },
-          fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, pointHoverBackgroundColor: acc,
+          fill: true, tension: 0.3,
+          pointRadius: 0, pointHoverRadius: 6,
+          pointHoverBackgroundColor: lineCol,
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 2,
+          borderWidth: 2.5,
         }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        animation: { duration: 400 },
+        onHover: (ev, elements, chart) => {
+          if (elements && elements.length > 0) {
+            const idx = elements[0].index;
+            chart.__activeX = elements[0].element.x;
+            setReadout(idx);
+            chart.draw();
+          } else {
+            chart.__activeX = null;
+            setReadout(-1);
+            chart.draw();
+          }
+        },
         plugins: {
           legend: { display: false },
-          tooltip: {
-            backgroundColor: '#14141e', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 0,
-            titleColor: 'rgba(255,255,255,0.6)', bodyColor: '#fff', padding: 12, displayColors: false,
-            cornerRadius: 8, titleFont: {size: 11, weight: '600'}, bodyFont: {size: 13, weight: '700'},
-            callbacks: { label: c => fmt(c.parsed.y, cur, c.parsed.y < 10 ? 4 : 2) }
-          }
+          tooltip: { enabled: false },
         },
         scales: {
           x: { display: true, ticks: { color: '#9090a0', font: {size:10, weight:'500'}, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false }, border: { display: false } },
           y: { display: false }
         }
-      }
+      },
+      plugins: [crosshairPlugin]
+    });
+
+    // Touch-Support: mouse-leave auf canvas → reset
+    cvE.addEventListener('mouseleave', () => {
+      if (detCh) { detCh.__activeX = null; setReadout(-1); detCh.draw(); }
+    });
+    // Touch-Events für Mobile
+    cvE.addEventListener('touchend', () => {
+      if (detCh) { detCh.__activeX = null; setReadout(-1); detCh.draw(); }
     });
 
     if (smE) smE.innerHTML = `<span>Start: ${fmt(first, cur, first < 10 ? 4 : 2)}</span>
-      <span style="color:${chg >= 0 ? 'var(--pos)' : 'var(--neg)'};font-weight:600">${chg >= 0 ? '↑ +' : '↓ '}${Math.abs(chg).toFixed(2)}%</span>
+      <span style="color:${chg >= 0 ? 'var(--pos)' : 'var(--neg)'};font-weight:700">${chg >= 0 ? '↑ +' : '↓ '}${Math.abs(chg).toFixed(2)}%</span>
       <span>Aktuell: ${fmt(last, cur, last < 10 ? 4 : 2)}</span>`;
   } catch(e) {
     devWarn('[loadDetChart]', e.message);
