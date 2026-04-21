@@ -1331,15 +1331,106 @@ function apiUrl(path) {
   return (API || API_DEFAULT).replace(/\/$/, '') + path;
 }
 
+// Direkter CoinGecko-Fallback vom Frontend (kein Backend nötig).
+// CoinGecko erlaubt direkten Browser-Aufruf via CORS.
+// Wird nur genutzt wenn das eigene Backend versagt.
+async function fetchQuoteDirectCG(id, currency) {
+  try {
+    const cur = (currency || cfg.cur).toLowerCase();
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=${cur},usd&include_24hr_change=true`;
+    const res = await Promise.race([
+      fetch(url),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+    ]);
+    if (!res || !res.ok) return null;
+    const d = await res.json();
+    const entry = d[id];
+    if (!entry) return null;
+    const price = entry[cur] ?? entry.usd;
+    if (typeof price !== 'number' || price <= 0) return null;
+    return {
+      symbol: id, type: 'crypto',
+      price, currency: currency || cfg.cur,
+      change24h: entry[`${cur}_24h_change`] ?? entry.usd_24h_change ?? 0,
+      source: 'coingecko-direct',
+      lastUpdated: Date.now(),
+    };
+  } catch (e) {
+    devWarn('[fetchQuoteDirectCG]', e.message);
+    return null;
+  }
+}
+
+// Direkter Binance-Fallback für Crypto vom Frontend (CORS-erlaubt).
+const FE_BINANCE_MAP = {
+  bitcoin:'BTCUSDT', ethereum:'ETHUSDT', solana:'SOLUSDT',
+  ripple:'XRPUSDT', binancecoin:'BNBUSDT', cardano:'ADAUSDT',
+  'avalanche-2':'AVAXUSDT', chainlink:'LINKUSDT', polkadot:'DOTUSDT',
+  litecoin:'LTCUSDT', dogecoin:'DOGEUSDT',
+  'the-open-network':'TONUSDT', tron:'TRXUSDT', aptos:'APTUSDT',
+  sui:'SUIUSDT', near:'NEARUSDT', arbitrum:'ARBUSDT',
+  uniswap:'UNIUSDT', aave:'AAVEUSDT',
+  pepe:'PEPEUSDT', 'shiba-inu':'SHIBUSDT',
+  stellar:'XLMUSDT', cosmos:'ATOMUSDT',
+  'ethereum-classic':'ETCUSDT', filecoin:'FILUSDT',
+  'internet-computer':'ICPUSDT', 'render-token':'RNDRUSDT',
+  'injective-protocol':'INJUSDT', optimism:'OPUSDT',
+  maker:'MKRUSDT', stacks:'STXUSDT',
+  'hedera-hashgraph':'HBARUSDT', algorand:'ALGOUSDT',
+  'the-graph':'GRTUSDT', 'immutable-x':'IMXUSDT',
+  vechain:'VETUSDT', 'fetch-ai':'FETUSDT',
+  'jupiter-exchange-solana':'JUPUSDT', 'worldcoin-wld':'WLDUSDT',
+  'sei-network':'SEIUSDT',
+};
+
+async function fetchQuoteDirectBinance(id, currency) {
+  const binSym = FE_BINANCE_MAP[id.toLowerCase()];
+  if (!binSym) return null;
+  try {
+    const res = await Promise.race([
+      fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${binSym}`),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
+    ]);
+    if (!res || !res.ok) return null;
+    const d = await res.json();
+    const priceUsd = parseFloat(d.lastPrice);
+    const chg = parseFloat(d.priceChangePercent);
+    if (!(priceUsd > 0)) return null;
+    // USD → Zielwährung grob umrechnen (hartcoded; gut genug für Fallback)
+    const rate = (currency === 'CHF') ? 0.88 : (currency === 'EUR') ? 0.92 : 1;
+    return {
+      symbol: id, type: 'crypto',
+      price: priceUsd * rate, currency: currency || cfg.cur,
+      change24h: isNaN(chg) ? 0 : chg,
+      source: 'binance-direct',
+      lastUpdated: Date.now(),
+    };
+  } catch (e) {
+    devWarn('[fetchQuoteDirectBinance]', e.message);
+    return null;
+  }
+}
+
 async function fetchQuote(id, type) {
-  // Erster Versuch
+  // ── Schritt 1: eigenes Backend ──
   let r = await safeFetch(apiUrl(`/api/quote?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&currency=${cfg.cur}`), 12000);
-  // Bei Fehler: ein Retry mit längerem Timeout
   if (!r.data || !(typeof r.data.price === 'number' && r.data.price > 0)) {
     await new Promise(res => setTimeout(res, 400));
     r = await safeFetch(apiUrl(`/api/quote?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&currency=${cfg.cur}`), 18000);
   }
-  const data = r.data;
+
+  let data = r.data;
+
+  // ── Schritt 2: wenn Crypto & Backend versagt → direkter Frontend-Fallback ──
+  if (type === 'crypto' && (!data || !(typeof data.price === 'number' && data.price > 0))) {
+    devWarn('[fetchQuote] Backend-Fehler für', id, '— versuche Binance direkt');
+    data = await fetchQuoteDirectBinance(id, cfg.cur);
+    if (!data || !(typeof data.price === 'number' && data.price > 0)) {
+      devWarn('[fetchQuote] Binance auch fehlgeschlagen — versuche CoinGecko direkt');
+      data = await fetchQuoteDirectCG(id, cfg.cur);
+    }
+  }
+
   if (data && typeof data.price === 'number' && data.price > 0) {
     pCache[id] = { price: data.price, chg: num(data.change24h, 0), cur: data.currency, src: data.source, at: Date.now() };
     savePC();
@@ -1376,23 +1467,60 @@ function histCacheSet(id, type, range, cur, data) {
   } catch {}
 }
 
+// Direkter CoinGecko-History-Fallback vom Frontend
+async function fetchHistDirectCG(id, range, currency) {
+  try {
+    const days = { '7d': 7, '1m': 30, '6m': 180, '1y': 365, 'all': 1825 }[range] || 30;
+    const cur = (currency || cfg.cur).toLowerCase();
+    const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?vs_currency=${cur}&days=${days}`;
+    const res = await Promise.race([
+      fetch(url),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000))
+    ]);
+    if (!res || !res.ok) return null;
+    const d = await res.json();
+    if (!Array.isArray(d?.prices) || !d.prices.length) return null;
+    const points = d.prices.map(p => ({
+      date: new Date(p[0]).toISOString(),
+      price: p[1],
+    }));
+    return {
+      symbol: id, type: 'crypto', range,
+      source: 'coingecko-direct',
+      currency: currency || cfg.cur,
+      points,
+    };
+  } catch (e) {
+    devWarn('[fetchHistDirectCG]', e.message);
+    return null;
+  }
+}
+
 async function fetchHist(id, type, range) {
-  // 1) LocalStorage-Cache-Check
+  // 1) LocalStorage-Cache
   const cached = histCacheGet(id, type, range, cfg.cur);
   if (cached) return cached;
 
-  // 2) API mit Retry
+  // 2) Eigenes Backend mit Retry
   let r = await safeFetch(apiUrl(`/api/history?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&range=${range}&currency=${cfg.cur}`), 14000);
   if (!r.data || !Array.isArray(r.data?.points) || r.data.points.length < 2) {
     await new Promise(res => setTimeout(res, 400));
     r = await safeFetch(apiUrl(`/api/history?symbol=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}&range=${range}&currency=${cfg.cur}`), 20000);
   }
 
-  // 3) Erfolgreich → cachen
-  if (r.data && Array.isArray(r.data.points) && r.data.points.length >= 2) {
-    histCacheSet(id, type, range, cfg.cur, r.data);
+  let data = r.data;
+
+  // 3) Backend versagt → direkter CoinGecko-Fallback bei Crypto
+  if (type === 'crypto' && (!data || !Array.isArray(data.points) || data.points.length < 2)) {
+    devWarn('[fetchHist] Backend-Fehler für', id, '— versuche CoinGecko direkt');
+    data = await fetchHistDirectCG(id, range, cfg.cur);
   }
-  return r.data;
+
+  // 4) Erfolgreich → cachen
+  if (data && Array.isArray(data.points) && data.points.length >= 2) {
+    histCacheSet(id, type, range, cfg.cur, data);
+  }
+  return data;
 }
 
 async function fetchHistByDate(id, type, date) {
