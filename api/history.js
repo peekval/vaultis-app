@@ -8,13 +8,13 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// ── Cache + Dedup (warm zwischen Requests einer Function-Instanz) ──
+// ── Cache + Dedup ──
 // - cache: key → { data, expiresAt }
-// - inflight: key → Promise (verhindert parallele Duplikate)
+// - inflight: key → Promise
 const _cache = new Map();
 const _inflight = new Map();
 
-// TTLs pro Range (kürzere Fenster → kürzer cachen)
+// TTLs pro Range
 const TTL_MS = {
   '7d':  3 * 60 * 1000,   // 3 min
   '1m': 10 * 60 * 1000,   // 10 min
