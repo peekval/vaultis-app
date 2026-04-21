@@ -40,7 +40,6 @@ async function fetchJson(url, options = {}) {
   return data;
 }
 
-// ── FX: USD → Zielwährung ─────────────────────────────────────
 async function usdRate(currency) {
   if (currency === 'USD') return 1;
 
@@ -55,7 +54,6 @@ async function usdRate(currency) {
   }
 }
 
-// ── CRYPTO via CoinGecko /market_chart ────────────────────────
 async function fetchCrypto(symbol, range, currency) {
   const days = RANGE_DAYS[range];
   const cur = currency.toLowerCase();
@@ -99,7 +97,6 @@ async function fetchCrypto(symbol, range, currency) {
   };
 }
 
-// ── STOCK / ETF via Alpha Vantage ─────────────────────────────
 async function fetchAlpha(symbol, range, outCurrency, type) {
   const key = process.env.ALPHA_VANTAGE_API_KEY;
   if (!key) throw new Error('ALPHA_VANTAGE_API_KEY fehlt');
@@ -158,7 +155,6 @@ async function fetchAlpha(symbol, range, outCurrency, type) {
   };
 }
 
-// ── HANDLER ──────────────────────────────────────────────────
 export default async function handler(req, res) {
   try {
     setCors(res);
