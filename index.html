@@ -1497,6 +1497,8 @@ async function refreshAll() {
     const pos = getPositions();
     if (!pos.length) { toast('Keine Positionen', ''); return; }
     toast('Aktualisiere…', '');
+    // Manueller Refresh → alle failed-Tracker löschen (frische Versuche)
+    if (typeof _failedFetches !== 'undefined') _failedFetches.clear();
     const tasks = pos.filter(p => !manualPrices[p.asset.id]);
     await runInPool(tasks, (p) => fetchQuote(p.asset.id, p.type), 4);
     renderHome(); renderPortfolio(); renderMarkets();
@@ -2070,6 +2072,7 @@ function paintDetail(a, type, p) {
 
 async function refreshOne(id, type) {
   toast('Lade Kurs…', '');
+  clearFailed(id);                       // manueller Retry → failed-Gate entfernen
   const fresh = await fetchQuote(id, type);
   if (fresh) {
     toast('Kurs geladen', 'ok');
@@ -2633,7 +2636,7 @@ function renderMarkets() {
 // Symbol nach jedem Re-Render wieder angefragt wird.
 // Entry: { at: timestamp }. Cooldown 2 Minuten.
 const _failedFetches = new Map();
-const FAIL_COOLDOWN_MS = 2 * 60 * 1000;
+const FAIL_COOLDOWN_MS = 30 * 1000;   // 30s — kurz genug damit manueller Refresh wirkt
 function isFailedRecently(id) {
   const e = _failedFetches.get(id);
   if (!e) return false;
