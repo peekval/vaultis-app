@@ -234,10 +234,10 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Metal-Historie aktuell nicht verfügbar' });
   }
 
-  // ── Cache-Check ──
+  // ── Cache-Check — nur POSITIVE Hits returnen ──
   const cacheKey = `hist:${type}:${symbol.toLowerCase()}:${range}:${cur}`;
   const cached = cacheGet(cacheKey);
-  if (cached) {
+  if (cached && Array.isArray(cached.points) && cached.points.length >= 2) {
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(cached);
   }
