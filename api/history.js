@@ -8,6 +8,42 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// ── Cache + Dedup (warm zwischen Requests einer Function-Instanz) ──
+// - cache: key → { data, expiresAt }
+// - inflight: key → Promise (verhindert parallele Duplikate)
+const _cache = new Map();
+const _inflight = new Map();
+
+// TTLs pro Range (kürzere Fenster → kürzer cachen)
+const TTL_MS = {
+  '7d':  3 * 60 * 1000,   // 3 min
+  '1m': 10 * 60 * 1000,   // 10 min
+  '6m': 30 * 60 * 1000,   // 30 min
+  '1y': 60 * 60 * 1000,   // 60 min
+  'all':2 * 60 * 60 * 1000, // 2 h
+};
+
+function cacheGet(key) {
+  const entry = _cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { _cache.delete(key); return null; }
+  return entry.data;
+}
+function cacheSet(key, data, ttl) {
+  _cache.set(key, { data, expiresAt: Date.now() + ttl });
+  // Alte Einträge aufräumen (soft cap ~200)
+  if (_cache.size > 200) {
+    const now = Date.now();
+    for (const [k, v] of _cache) { if (v.expiresAt < now) _cache.delete(k); }
+  }
+}
+async function withDedup(key, fn) {
+  if (_inflight.has(key)) return _inflight.get(key);
+  const p = fn().finally(() => _inflight.delete(key));
+  _inflight.set(key, p);
+  return p;
+}
+
 const RANGE_DAYS = { '7d': 7, '1m': 30, '6m': 180, '1y': 365, 'all': 1825 };
 
 const ALPHA_CFG = {
@@ -192,34 +228,48 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Metal-Historie aktuell nicht verfügbar' });
   }
 
-  try {
-    // ── Crypto ──
-    if (type === 'crypto') {
-      const result = await fetchCrypto(symbol, range, cur);
-      return res.status(200).json(result);
-    }
+  // ── Cache-Check ──
+  const cacheKey = `hist:${type}:${symbol.toLowerCase()}:${range}:${cur}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) {
+    res.setHeader('X-Cache', 'HIT');
+    return res.status(200).json(cached);
+  }
 
-    // ── Stock: Alpha Vantage → Twelve Data ──
-    if (type === 'stock') {
-      let result;
-      try {
-        result = await fetchStockAlpha(symbol, range);
-      } catch (alphaErr) {
-        console.warn(`[history] alphavantage failed for ${symbol}: ${alphaErr.message} — trying twelvedata`);
+  try {
+    // Dedup: falls ein zweiter Request denselben Key gleichzeitig will, teilen sie sich den Promise
+    const result = await withDedup(cacheKey, async () => {
+      if (type === 'crypto') {
+        return await fetchCrypto(symbol, range, cur);
+      }
+      if (type === 'stock') {
         try {
-          result = await fetchStockTwelve(symbol, range);
-        } catch (tdErr) {
-          console.warn(`[history] twelvedata also failed for ${symbol}: ${tdErr.message}`);
-          return res.status(404).json({
-            error: `Historie für ${symbol} nicht verfügbar`,
-            detail: { alphavantage: alphaErr.message, twelvedata: tdErr.message },
-          });
+          return await fetchStockAlpha(symbol, range);
+        } catch (alphaErr) {
+          console.warn(`[history] alphavantage failed for ${symbol}: ${alphaErr.message} — trying twelvedata`);
+          try {
+            return await fetchStockTwelve(symbol, range);
+          } catch (tdErr) {
+            console.warn(`[history] twelvedata also failed for ${symbol}: ${tdErr.message}`);
+            const err = new Error(`Historie für ${symbol} nicht verfügbar`);
+            err.status = 404;
+            err.detail = { alphavantage: alphaErr.message, twelvedata: tdErr.message };
+            throw err;
+          }
         }
       }
-      return res.status(200).json(result);
-    }
+      throw new Error('Unbekannter type');
+    });
+
+    // Erfolgreich — cachen
+    cacheSet(cacheKey, result, TTL_MS[range] || 10 * 60 * 1000);
+    res.setHeader('X-Cache', 'MISS');
+    return res.status(200).json(result);
 
   } catch (e) {
+    if (e.status === 404) {
+      return res.status(404).json({ error: e.message, detail: e.detail });
+    }
     console.error('[api/history] unexpected:', e);
     return res.status(500).json({ error: `Interner Fehler: ${e.message}` });
   }
