@@ -1,7 +1,6 @@
-// api/history-by-date.js
+// api/history.js
 // Vercel Serverless Function
-// GET /api/history-by-date?symbol=bitcoin&type=crypto&date=2024-03-15&currency=CHF
-// Liefert historischen Kurs für ein bestimmtes Datum.
+// GET /api/history?symbol=bitcoin&type=crypto&range=1m&currency=CHF
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -9,22 +8,33 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// Histor. Punkte werden sehr lange gecacht (sie ändern sich nicht mehr)
+// ── Cache + Dedup (warm zwischen Requests einer Function-Instanz) ──
+// - cache: key → { data, expiresAt }
+// - inflight: key → Promise (verhindert parallele Duplikate)
 const _cache = new Map();
 const _inflight = new Map();
-const HISTORICAL_TTL = 7 * 24 * 60 * 60 * 1000;  // 7 Tage
+
+// TTLs pro Range (kürzere Fenster → kürzer cachen)
+const TTL_MS = {
+  '7d':  3 * 60 * 1000,   // 3 min
+  '1m': 10 * 60 * 1000,   // 10 min
+  '6m': 30 * 60 * 1000,   // 30 min
+  '1y': 60 * 60 * 1000,   // 60 min
+  'all':2 * 60 * 60 * 1000, // 2 h
+};
 
 function cacheGet(key) {
-  const e = _cache.get(key);
-  if (!e) return null;
-  if (Date.now() > e.expiresAt) { _cache.delete(key); return null; }
-  return e.data;
+  const entry = _cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { _cache.delete(key); return null; }
+  return entry.data;
 }
-function cacheSet(key, data, ttl = HISTORICAL_TTL) {
+function cacheSet(key, data, ttl) {
   _cache.set(key, { data, expiresAt: Date.now() + ttl });
-  if (_cache.size > 500) {
+  // Alte Einträge aufräumen (soft cap ~200)
+  if (_cache.size > 200) {
     const now = Date.now();
-    for (const [k, v] of _cache) if (v.expiresAt < now) _cache.delete(k);
+    for (const [k, v] of _cache) { if (v.expiresAt < now) _cache.delete(k); }
   }
 }
 async function withDedup(key, fn) {
@@ -34,117 +44,192 @@ async function withDedup(key, fn) {
   return p;
 }
 
-// FX Rate USD → Zielwährung (gleiche Logik wie history.js)
-const _fxCache = new Map();
+const RANGE_DAYS = { '7d': 7, '1m': 30, '6m': 180, '1y': 365, 'all': 1825 };
+
+const ALPHA_CFG = {
+  '7d': { fn: 'TIME_SERIES_INTRADAY&interval=60min', key: 'Time Series (60min)', outputsize: 'full' },
+  '1m': { fn: 'TIME_SERIES_DAILY',                  key: 'Time Series (Daily)', outputsize: 'compact' },
+  '6m': { fn: 'TIME_SERIES_DAILY',                  key: 'Time Series (Daily)', outputsize: 'full' },
+  '1y': { fn: 'TIME_SERIES_DAILY',                  key: 'Time Series (Daily)', outputsize: 'full' },
+  'all':{ fn: 'TIME_SERIES_WEEKLY',                 key: 'Weekly Time Series',  outputsize: 'full' },
+};
+
+const TD_CFG = {
+  '7d': { interval: '1h',    outputsize: 168 },
+  '1m': { interval: '1day',  outputsize: 30  },
+  '6m': { interval: '1day',  outputsize: 180 },
+  '1y': { interval: '1day',  outputsize: 365 },
+  'all':{ interval: '1week', outputsize: 1000 },
+};
+
+// ── FX: USD → Zielwährung ─────────────────────────────────────
 async function usdRate(currency) {
   if (currency === 'USD') return 1;
-  const cached = _fxCache.get(currency);
-  if (cached && Date.now() - cached.at < 10 * 60 * 1000) return cached.rate;
   const FALLBACK = { CHF: 0.88, EUR: 0.92, GBP: 0.79 };
   try {
-    const r = await fetch(`https://api.coinbase.com/v2/exchange-rates?currency=USD`);
-    if (!r.ok) return FALLBACK[currency] || 1;
-    const data = await r.json();
-    const rate = parseFloat(data?.data?.rates?.[currency]);
-    if (!isFinite(rate) || rate <= 0) return FALLBACK[currency] || 1;
-    _fxCache.set(currency, { rate, at: Date.now() });
-    return rate;
+    const r = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=USD',
+      { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) throw new Error('fx failed');
+    const d = await r.json();
+    const v = parseFloat(d?.data?.rates?.[currency]);
+    return isNaN(v) ? (FALLBACK[currency] ?? 1) : v;
   } catch {
-    return FALLBACK[currency] || 1;
+    return FALLBACK[currency] ?? 1;
   }
 }
 
-// ── Crypto via CoinGecko historischer Einzelpreis ──
-async function cryptoHistByDate(symbol, date, currency) {
-  // CoinGecko format: DD-MM-YYYY
-  const [y, m, d] = date.split('-');
-  const cgDate = `${d}-${m}-${y}`;
-  const key = process.env.COINGECKO_API_KEY;
-  const url = `https://api.coingecko.com/api/v3/coins/${symbol}/history?date=${cgDate}${key ? `&x_cg_demo_api_key=${key}` : ''}`;
+// ── CRYPTO via CoinGecko /market_chart ────────────────────────
+async function fetchCrypto(symbol, range, currency) {
+  const days = RANGE_DAYS[range];
+  const cur  = currency.toLowerCase();
+  const key  = process.env.COINGECKO_API_KEY;
+  const url  = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(symbol)}/market_chart?vs_currency=${cur}&days=${days}`;
 
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`CoinGecko ${r.status}`);
-  const data = await r.json();
-  const priceUsd = data?.market_data?.current_price?.usd;
-  if (typeof priceUsd !== 'number' || priceUsd <= 0) throw new Error('Kein Preis verfügbar');
+  const r = await fetch(url, {
+    headers: key ? { 'x-cg-demo-api-key': key } : {},
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
 
-  const rate = await usdRate(currency);
-  return { symbol, date, price: priceUsd * rate, currency, source: 'coingecko' };
+  const d = await r.json();
+  if (!Array.isArray(d?.prices) || d.prices.length === 0) {
+    throw new Error('CoinGecko: keine Preisdaten');
+  }
+
+  // d.prices: [[unix_ms, price], ...]
+  const raw = d.prices
+    .map(([ms, price]) => {
+      const dt = new Date(ms);
+      const date = range === '7d'
+        ? dt.toISOString().slice(0, 16)   // YYYY-MM-DDTHH:mm
+        : dt.toISOString().slice(0, 10);  // YYYY-MM-DD
+      return { date, price };
+    })
+    .filter(p => typeof p.price === 'number' && p.price > 0);
+
+  // Daily: einen Punkt pro Tag (letzten = Tages-Close)
+  let points;
+  if (range === '7d') {
+    points = raw;
+  } else {
+    const byDate = new Map();
+    for (const p of raw) byDate.set(p.date, p);
+    points = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  return { symbol, type: 'crypto', range, source: 'coingecko', points };
 }
 
-// ── Stock via Alpha Vantage TIME_SERIES_DAILY → Einzelpunkt ──
-async function stockHistByDate(symbol, date) {
+// ── STOCK via Alpha Vantage ───────────────────────────────────
+async function fetchStockAlpha(symbol, range) {
   const key = process.env.ALPHA_VANTAGE_API_KEY;
   if (!key) throw new Error('ALPHA_VANTAGE_API_KEY fehlt');
 
-  const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${key}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`Alpha Vantage ${r.status}`);
-  const data = await r.json();
+  const cfg = ALPHA_CFG[range];
+  const url = `https://www.alphavantage.co/query?function=${cfg.fn}&symbol=${encodeURIComponent(symbol)}&outputsize=${cfg.outputsize}&apikey=${key}`;
 
-  if (data.Note || data.Information) throw new Error('Rate-Limit: ' + (data.Note || data.Information));
-  const series = data['Time Series (Daily)'];
-  if (!series) throw new Error('Keine Daten von Alpha Vantage');
+  const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  if (!r.ok) throw new Error(`Alpha Vantage HTTP ${r.status}`);
 
-  // Exaktes Datum suchen, sonst nächstes früheres Datum (Wochenende/Feiertag)
-  let price = null;
-  if (series[date]) {
-    price = parseFloat(series[date]['4. close']);
-  } else {
-    const dates = Object.keys(series).sort().reverse();
-    const targetTs = new Date(date).getTime();
-    for (const d of dates) {
-      if (new Date(d).getTime() <= targetTs) {
-        price = parseFloat(series[d]['4. close']);
-        break;
-      }
-    }
+  const d = await r.json();
+
+  // Alpha Vantage gibt Fehler im JSON-Body zurück, nicht per HTTP-Status
+  if (d['Error Message']) throw new Error(`Alpha Vantage: ${d['Error Message']}`);
+  if (d['Note'])          throw new Error(`Alpha Vantage Rate-Limit: ${d['Note']}`);
+  if (d['Information'])   throw new Error(`Alpha Vantage: ${d['Information']}`);
+
+  const series = d[cfg.key];
+  if (!series || typeof series !== 'object') {
+    throw new Error(`Alpha Vantage: Serie "${cfg.key}" fehlt`);
   }
-  if (!price || price <= 0) throw new Error('Kein Preis am Datum');
-  return { symbol, date, price, currency: 'USD', source: 'alphavantage' };
+
+  const intraday  = range === '7d';
+  const cutoffMs  = Date.now() - RANGE_DAYS[range] * 86400000;
+
+  const points = Object.entries(series)
+    .map(([dateStr, entry]) => {
+      const price = parseFloat(entry['4. close']);
+      const norm  = dateStr.replace(' ', 'T');
+      return { _ms: new Date(norm).getTime(), date: intraday ? norm.slice(0, 16) : norm.slice(0, 10), price };
+    })
+    .filter(p => !isNaN(p.price) && p.price > 0 && p._ms >= cutoffMs)
+    .sort((a, b) => a._ms - b._ms)
+    .map(({ date, price }) => ({ date, price }));
+
+  if (points.length === 0) throw new Error('Alpha Vantage: keine Punkte im Range');
+
+  return { symbol, type: 'stock', range, source: 'alphavantage', points };
 }
 
-// ── Twelve Data Fallback ──
-async function stockHistByDateTwelve(symbol, date) {
+// ── STOCK via Twelve Data (fallback) ─────────────────────────
+async function fetchStockTwelve(symbol, range) {
   const key = process.env.TWELVE_DATA_API_KEY;
   if (!key) throw new Error('TWELVE_DATA_API_KEY fehlt');
 
-  const url = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&start_date=${date}&end_date=${date}&apikey=${key}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`Twelve Data ${r.status}`);
-  const data = await r.json();
-  if (data.status === 'error') throw new Error(data.message || 'Twelve Data Error');
+  const cfg = TD_CFG[range];
+  const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${cfg.interval}&outputsize=${cfg.outputsize}&apikey=${key}`;
 
-  const values = data.values;
-  if (!Array.isArray(values) || !values.length) throw new Error('Keine Daten von Twelve Data');
-  const price = parseFloat(values[0].close);
-  if (!price || price <= 0) throw new Error('Kein Preis');
-  return { symbol, date, price, currency: 'USD', source: 'twelvedata' };
+  const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  if (!r.ok) throw new Error(`Twelve Data HTTP ${r.status}`);
+
+  const d = await r.json();
+  if (d.status === 'error') throw new Error(`Twelve Data: ${d.message}`);
+  if (!Array.isArray(d.values)) throw new Error('Twelve Data: keine values');
+
+  const intraday = range === '7d';
+
+  const points = d.values
+    .map(v => {
+      const norm  = v.datetime.replace(' ', 'T');
+      const price = parseFloat(v.close);
+      return { _ms: new Date(norm).getTime(), date: intraday ? norm.slice(0, 16) : norm.slice(0, 10), price };
+    })
+    .filter(p => !isNaN(p.price) && p.price > 0)
+    .sort((a, b) => a._ms - b._ms)
+    .map(({ date, price }) => ({ date, price }));
+
+  if (points.length === 0) throw new Error('Twelve Data: keine Punkte');
+
+  return { symbol, type: 'stock', range, source: 'twelvedata', points };
 }
 
 // ── HANDLER ──────────────────────────────────────────────────
 export default async function handler(req, res) {
+  // CORS für jeden Response
   Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
 
-  if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  // OPTIONS Preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
 
-  const { symbol, type, date, currency = 'USD' } = req.query;
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { symbol, type, range = '1m', currency = 'USD' } = req.query;
   const cur = currency.toUpperCase();
 
+  // Validation
   if (!symbol) return res.status(400).json({ error: 'symbol ist erforderlich' });
-  if (!type) return res.status(400).json({ error: 'type ist erforderlich' });
-  if (!date) return res.status(400).json({ error: 'date ist erforderlich (YYYY-MM-DD)' });
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return res.status(400).json({ error: 'date muss YYYY-MM-DD sein' });
+  if (!type)   return res.status(400).json({ error: 'type ist erforderlich' });
+  if (!RANGE_DAYS[range]) {
+    return res.status(400).json({ error: `range muss 7d|1m|6m|1y|all sein (erhalten: ${range})` });
+  }
+  if (!['crypto', 'stock', 'etf', 'metal'].includes(type)) {
+    return res.status(400).json({ error: `type muss crypto|stock|etf|metal sein (erhalten: ${type})` });
   }
 
-  // ETF/Metal nicht unterstützt
-  if (type === 'etf' || type === 'metal') {
-    return res.status(404).json({ error: `Historie für ${type} nicht verfügbar` });
+  // ETF / Metal: kein zuverlässiger Provider verfügbar
+  if (type === 'etf') {
+    return res.status(404).json({ error: 'ETF-Historie aktuell nicht verfügbar' });
+  }
+  if (type === 'metal') {
+    return res.status(404).json({ error: 'Metal-Historie aktuell nicht verfügbar' });
   }
 
-  const cacheKey = `hbd:${type}:${symbol.toLowerCase()}:${date}:${cur}`;
+  // ── Cache-Check ──
+  const cacheKey = `hist:${type}:${symbol.toLowerCase()}:${range}:${cur}`;
   const cached = cacheGet(cacheKey);
   if (cached) {
     res.setHeader('X-Cache', 'HIT');
@@ -152,33 +237,23 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Dedup: falls ein zweiter Request denselben Key gleichzeitig will, teilen sie sich den Promise
     const result = await withDedup(cacheKey, async () => {
       if (type === 'crypto') {
-        return await cryptoHistByDate(symbol, date, cur);
+        return await fetchCrypto(symbol, range, cur);
       }
       if (type === 'stock') {
         try {
-          const r = await stockHistByDate(symbol, date);
-          if (cur !== 'USD') {
-            const rate = await usdRate(cur);
-            r.price = r.price * rate;
-            r.currency = cur;
-          }
-          return r;
-        } catch (e1) {
-          console.warn('[hbd] alpha failed:', e1.message);
+          return await fetchStockAlpha(symbol, range);
+        } catch (alphaErr) {
+          console.warn(`[history] alphavantage failed for ${symbol}: ${alphaErr.message} — trying twelvedata`);
           try {
-            const r = await stockHistByDateTwelve(symbol, date);
-            if (cur !== 'USD') {
-              const rate = await usdRate(cur);
-              r.price = r.price * rate;
-              r.currency = cur;
-            }
-            return r;
-          } catch (e2) {
-            const err = new Error('Beide Provider fehlgeschlagen');
+            return await fetchStockTwelve(symbol, range);
+          } catch (tdErr) {
+            console.warn(`[history] twelvedata also failed for ${symbol}: ${tdErr.message}`);
+            const err = new Error(`Historie für ${symbol} nicht verfügbar`);
             err.status = 404;
-            err.detail = { alpha: e1.message, twelve: e2.message };
+            err.detail = { alphavantage: alphaErr.message, twelvedata: tdErr.message };
             throw err;
           }
         }
@@ -186,16 +261,16 @@ export default async function handler(req, res) {
       throw new Error('Unbekannter type');
     });
 
-    cacheSet(cacheKey, result);
+    // Erfolgreich — cachen
+    cacheSet(cacheKey, result, TTL_MS[range] || 10 * 60 * 1000);
     res.setHeader('X-Cache', 'MISS');
     return res.status(200).json(result);
+
   } catch (e) {
     if (e.status === 404) {
-      // Negative Result kurz cachen (5 min) → kein Hammer-Retry
-      cacheSet(cacheKey, null, 5 * 60 * 1000);
       return res.status(404).json({ error: e.message, detail: e.detail });
     }
-    console.error('[api/history-by-date]', e);
+    console.error('[api/history] unexpected:', e);
     return res.status(500).json({ error: `Interner Fehler: ${e.message}` });
   }
 }
