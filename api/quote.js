@@ -40,13 +40,20 @@ async function withDedup(key, fn) {
   return p;
 }
 
+// Robust fetch mit Promise.race Timeout (zuverlässiger als AbortSignal.timeout auf Vercel)
+async function fetchWithTimeout(url, opts = {}, timeoutMs = 6000) {
+  return Promise.race([
+    fetch(url, opts),
+    new Promise((_, rej) => setTimeout(() => rej(new Error(`Timeout ${timeoutMs}ms: ${url.split('?')[0]}`)), timeoutMs))
+  ]);
+}
+
 // ── FX: USD → target ─────────────────────────────────────────
 async function usdRate(currency) {
   if (currency === 'USD') return 1;
   const FALLBACK = { CHF: 0.88, EUR: 0.92, GBP: 0.79 };
   try {
-    const r = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=USD',
-      { signal: AbortSignal.timeout(4000) });
+    const r = await fetchWithTimeout('https://api.coinbase.com/v2/exchange-rates?currency=USD', {}, 4000);
     if (!r.ok) throw new Error('fx failed');
     const d = await r.json();
     const v = parseFloat(d?.data?.rates?.[currency]);
@@ -85,8 +92,7 @@ async function cryptoQuote(id, currency) {
   // Binance primary
   if (binSym) {
     try {
-      const r = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${binSym}`,
-        { signal: AbortSignal.timeout(6000) });
+      const r = await fetchWithTimeout(`https://api.binance.com/api/v3/ticker/24hr?symbol=${binSym}`, {}, 6000);
       if (r.ok) {
         const d = await r.json();
         const priceUsd = parseFloat(d.lastPrice);
@@ -109,8 +115,8 @@ async function cryptoQuote(id, currency) {
   try {
     const cur = currency.toLowerCase();
     const key = process.env.COINGECKO_API_KEY;
-    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=${cur},usd&include_24hr_change=true`,
-      { headers: key ? { 'x-cg-demo-api-key': key } : {}, signal: AbortSignal.timeout(8000) });
+    const r = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=${cur},usd&include_24hr_change=true`,
+      { headers: key ? { 'x-cg-demo-api-key': key } : {} }, 8000);
     if (!r.ok) return null;
     const d = await r.json();
     const entry = d[id];
@@ -134,8 +140,7 @@ async function stockQuote(symbol, type) {
   const finnKey = process.env.FINNHUB_API_KEY;
   if (finnKey) {
     try {
-      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${finnKey}`,
-        { signal: AbortSignal.timeout(6000) });
+      const r = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${finnKey}`, {}, 6000);
       if (r.ok) {
         const d = await r.json();
         if (typeof d.c === 'number' && d.c > 0) {
@@ -154,8 +159,7 @@ async function stockQuote(symbol, type) {
   const tdKey = process.env.TWELVE_DATA_API_KEY;
   if (tdKey) {
     try {
-      const r = await fetch(`https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${tdKey}`,
-        { signal: AbortSignal.timeout(6000) });
+      const r = await fetchWithTimeout(`https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${tdKey}`, {}, 6000);
       if (r.ok) {
         const d = await r.json();
         if (d.status !== 'error' && d.close) {
@@ -188,8 +192,7 @@ async function metalQuote(id, currency) {
   if (!key) return null;
 
   try {
-    const r = await fetch('https://api.metals.live/v1/spot',
-      { signal: AbortSignal.timeout(6000) });
+    const r = await fetchWithTimeout('https://api.metals.live/v1/spot', {}, 6000);
     if (!r.ok) return null;
     const data = await r.json();
     if (!Array.isArray(data)) return null;
