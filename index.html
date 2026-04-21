@@ -1331,6 +1331,44 @@ function apiUrl(path) {
   return (API || API_DEFAULT).replace(/\/$/, '') + path;
 }
 
+// Direkter Stock-Fallback vom Frontend via Yahoo Finance API
+// (öffentlich, kein API-Key nötig, CORS-freundlich über Proxy)
+async function fetchStockDirectYahoo(symbol, currency) {
+  // Yahoo's query1.finance.yahoo.com ist leider CORS-blocked vom Browser.
+  // Deshalb nutzen wir einen öffentlichen CORS-Proxy oder direkten FMP-Endpoint.
+  // Stooq.com ist eine gute Alternative — liefert CSV, CORS-erlaubt, kein Key.
+  try {
+    // Stooq verlangt Symbol im lowercase mit .us suffix für US-Aktien
+    const stooqSym = symbol.toLowerCase() + '.us';
+    const url = `https://stooq.com/q/l/?s=${stooqSym}&f=sd2t2ohlcv&h&e=csv`;
+    const res = await Promise.race([
+      fetch(url),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
+    ]);
+    if (!res || !res.ok) return null;
+    const text = await res.text();
+    // CSV Format: Symbol,Date,Time,Open,High,Low,Close,Volume
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return null;
+    const parts = lines[1].split(',');
+    const close = parseFloat(parts[6]);
+    const open = parseFloat(parts[3]);
+    if (!(close > 0)) return null;
+    const chg = open > 0 ? ((close - open) / open * 100) : 0;
+    const rate = (currency === 'CHF') ? 0.88 : (currency === 'EUR') ? 0.92 : 1;
+    return {
+      symbol, type: 'stock',
+      price: close * rate, currency: currency || cfg.cur,
+      change24h: chg,
+      source: 'stooq-direct',
+      lastUpdated: Date.now(),
+    };
+  } catch (e) {
+    devWarn('[fetchStockDirectYahoo]', e.message);
+    return null;
+  }
+}
+
 // Direkter CoinGecko-Fallback vom Frontend (kein Backend nötig).
 // CoinGecko erlaubt direkten Browser-Aufruf via CORS.
 // Wird nur genutzt wenn das eigene Backend versagt.
@@ -1421,14 +1459,20 @@ async function fetchQuote(id, type) {
 
   let data = r.data;
 
-  // ── Schritt 2: wenn Crypto & Backend versagt → direkter Frontend-Fallback ──
+  // ── Schritt 2: Crypto Fallback — Binance direct, dann CoinGecko direct ──
   if (type === 'crypto' && (!data || !(typeof data.price === 'number' && data.price > 0))) {
     devWarn('[fetchQuote] Backend-Fehler für', id, '— versuche Binance direkt');
     data = await fetchQuoteDirectBinance(id, cfg.cur);
     if (!data || !(typeof data.price === 'number' && data.price > 0)) {
-      devWarn('[fetchQuote] Binance auch fehlgeschlagen — versuche CoinGecko direkt');
+      devWarn('[fetchQuote] Binance fehlgeschlagen — versuche CoinGecko direkt');
       data = await fetchQuoteDirectCG(id, cfg.cur);
     }
+  }
+
+  // ── Schritt 3: Stock Fallback — Stooq direkt ──
+  if ((type === 'stock' || type === 'etf') && (!data || !(typeof data.price === 'number' && data.price > 0))) {
+    devWarn('[fetchQuote] Backend-Fehler für', id, '— versuche Stooq direkt');
+    data = await fetchStockDirectYahoo(id, cfg.cur);
   }
 
   if (data && typeof data.price === 'number' && data.price > 0) {
@@ -1465,6 +1509,52 @@ function histCacheSet(id, type, range, cur, data) {
     const k = `v3_chart_${type}_${id}_${range}_${cur}`;
     localStorage.setItem(k, JSON.stringify({ data, at: Date.now() }));
   } catch {}
+}
+
+// Direkter Stock-History-Fallback via Stooq
+async function fetchHistDirectStooq(symbol, range, currency) {
+  try {
+    const stooqSym = symbol.toLowerCase() + '.us';
+    // Stooq liefert tägliche Daten als CSV
+    const url = `https://stooq.com/q/d/l/?s=${stooqSym}&i=d`;
+    const res = await Promise.race([
+      fetch(url),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000))
+    ]);
+    if (!res || !res.ok) return null;
+    const text = await res.text();
+    // CSV: Date,Open,High,Low,Close,Volume
+    const lines = text.trim().split('\n');
+    if (lines.length < 3) return null;
+
+    const daysMap = { '7d': 7, '1m': 30, '6m': 180, '1y': 365, 'all': 1825 };
+    const limit = daysMap[range] || 30;
+
+    // Skip header, take last N lines
+    const dataLines = lines.slice(1);
+    const sliced = dataLines.slice(-limit);
+
+    const rate = (currency === 'CHF') ? 0.88 : (currency === 'EUR') ? 0.92 : 1;
+    const points = sliced.map(line => {
+      const parts = line.split(',');
+      return {
+        date: parts[0],   // YYYY-MM-DD
+        price: parseFloat(parts[4]) * rate,
+      };
+    }).filter(p => p.price > 0);
+
+    if (points.length < 2) return null;
+
+    return {
+      symbol, type: 'stock', range,
+      source: 'stooq-direct',
+      currency: currency || cfg.cur,
+      points,
+    };
+  } catch (e) {
+    devWarn('[fetchHistDirectStooq]', e.message);
+    return null;
+  }
 }
 
 // Direkter CoinGecko-History-Fallback vom Frontend
@@ -1510,10 +1600,14 @@ async function fetchHist(id, type, range) {
 
   let data = r.data;
 
-  // 3) Backend versagt → direkter CoinGecko-Fallback bei Crypto
+  // 3) Backend versagt → direkte Fallbacks
   if (type === 'crypto' && (!data || !Array.isArray(data.points) || data.points.length < 2)) {
     devWarn('[fetchHist] Backend-Fehler für', id, '— versuche CoinGecko direkt');
     data = await fetchHistDirectCG(id, range, cfg.cur);
+  }
+  if ((type === 'stock' || type === 'etf') && (!data || !Array.isArray(data.points) || data.points.length < 2)) {
+    devWarn('[fetchHist] Backend-Fehler für', id, '— versuche Stooq direkt');
+    data = await fetchHistDirectStooq(id, range, cfg.cur);
   }
 
   // 4) Erfolgreich → cachen
