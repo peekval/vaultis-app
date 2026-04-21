@@ -2459,15 +2459,47 @@ async function saveTx() {
       const amt = parseFloat($('a-amount')?.value);
       let hp = parseFloat($('a-hp')?.value);
       if (isNaN(amt) || amt <= 0) { toast('Betrag fehlt', 'warn'); return; }
+
+      // ── Fallback-Kette ──
+      // 1. User hat Kurs manuell eingegeben → direkt nutzen
+      // 2. Sonst: History-Endpoint versuchen
+      // 3. Fallback: Live-Quote (wenn heute die Transaktion ist)
+      // 4. Letzter Fallback: User zur manuellen Eingabe auffordern
       if (isNaN(hp) || hp <= 0) {
         if (btn) btn.innerHTML = '<span class="spin"></span> Lade Kurs…';
+
+        // 2. History-Endpoint
         hp = await fetchHistByDate(addAsset.id, addType, date);
+
+        // 3. Live-Quote als Fallback (nur wenn History failed UND Datum nahe heute)
+        if (!hp || hp <= 0) {
+          const txDate = new Date(date);
+          const today = new Date();
+          const diffDays = Math.abs((today - txDate) / 86400000);
+          // Nur wenn Transaktion in den letzten 3 Tagen
+          if (diffDays <= 3) {
+            if (btn) btn.innerHTML = '<span class="spin"></span> Versuche Live-Kurs…';
+            const liveQuote = await fetchQuote(addAsset.id, addType);
+            if (liveQuote && typeof liveQuote.price === 'number' && liveQuote.price > 0) {
+              hp = liveQuote.price;
+              toast('Live-Kurs als Fallback verwendet', 'ok');
+            }
+          }
+        }
+
         if (btn) btn.textContent = editId ? 'Änderungen speichern' : 'Position speichern';
       }
+
+      // 4. Finaler Fallback-Check: wenn immer noch kein Kurs → User soll manuell eingeben
       if (!hp || hp <= 0) {
-        safeHTML('a-hp-hint', '<span style="color:var(--neg)">Kurs nicht verfügbar — bitte manuell eingeben.</span>');
-        toast('Historischer Kurs nicht verfügbar', 'warn'); return;
+        safeHTML('a-hp-hint', '<span style="color:var(--warn);font-weight:600">⚠ Kurs nicht verfügbar — bitte Kurs manuell eingeben oder später erneut versuchen.</span>');
+        // Fokus auf Kursfeld setzen
+        const hpField = $('a-hp');
+        if (hpField) { hpField.focus(); hpField.scrollIntoView({behavior:'smooth', block:'center'}); }
+        toast('Bitte Kurs manuell eingeben', 'warn');
+        return;
       }
+
       const calcUnits = amt / hp;
       safeSet('a-hp', 'value', hp.toFixed(8));
       safeText('a-hp-hint', `Kurs vom ${date}: ${fmt(hp, cur, 2)}`);
