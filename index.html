@@ -1191,25 +1191,105 @@
       showToast('Detail-Kurs aktualisiert', 'ok');
     }
 
-    async function loadDetailChart(asset, type, range){
-      setHTML('detail-chart-area', `
-        <div class="chart-card">
-          <div class="chart-tabs">
-            <button class="chart-tab ${range === '7d' ? 'active' : ''}" onclick="loadDetailChart(window.__detailAsset,window.__detailType,'7d')">7T</button>
-            <button class="chart-tab ${range === '1m' ? 'active' : ''}" onclick="loadDetailChart(window.__detailAsset,window.__detailType,'1m')">1M</button>
-            <button class="chart-tab ${range === '6m' ? 'active' : ''}" onclick="loadDetailChart(window.__detailAsset,window.__detailType,'6m')">6M</button>
-            <button class="chart-tab ${range === '1y' ? 'active' : ''}" onclick="loadDetailChart(window.__detailAsset,window.__detailType,'1y')">1J</button>
-          </div>
-          <div class="chart-wrap">
-            <div id="detail-chart-loading" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:12px;">
-              <span class="spinner" style="margin-right:8px;"></span>Lade Daten…
-            </div>
-            <canvas id="detail-chart-canvas" style="display:none;"></canvas>
-          </div>
-          <div class="chart-summary" id="detail-chart-summary"></div>
-        </div>
-      `);
+    async function loadDetChart(range) {
+  const canvas = document.getElementById('detChart');
+  if (!canvas) return;
 
+  const ctx = canvas.getContext('2d');
+
+  // loading state
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#666';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('Lade Chart...', 20, 40);
+
+  try {
+    const data = await fetchHist(currentAsset.id, currentAsset.type, range);
+
+async function loadDetChart(range) {
+  const canvas = document.getElementById('detChart');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+
+  // loading state
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#666';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('Lade Chart...', 20, 40);
+
+  try {
+    const data = await fetchHist(currentAsset.id, currentAsset.type, range);
+
+    //  KEINE Daten
+    if (!data || !Array.isArray(data.points) || data.points.length < 2) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ff6b6b';
+      ctx.fillText('Keine Daten verfügbar', 20, 40);
+      return;
+    }
+
+    const values = data.points.map(p => p.price);
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = '#7c5cff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    values.forEach((v, i) => {
+      const x = (i / (values.length - 1)) * canvas.width;
+      const y = canvas.height - ((v - min) / (max - min || 1)) * canvas.height;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+
+  } catch (e) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ff6b6b';
+    ctx.fillText('Fehler beim Laden', 20, 40);
+  }
+}
+    if (!data || !Array.isArray(data.points) || data.points.length < 2) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ff6b6b';
+      ctx.fillText('Keine Daten verfügbar', 20, 40);
+      return;
+    }
+
+    const values = data.points.map(p => p.price);
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = '#7c5cff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    values.forEach((v, i) => {
+      const x = (i / (values.length - 1)) * canvas.width;
+      const y = canvas.height - ((v - min) / (max - min || 1)) * canvas.height;
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+
+  } catch (e) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ff6b6b';
+    ctx.fillText('Fehler beim Laden', 20, 40);
+  }
+}
       window.__detailAsset = asset;
       window.__detailType = type;
 
