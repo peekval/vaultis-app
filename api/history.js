@@ -62,13 +62,20 @@ const TD_CFG = {
   'all':{ interval: '1week', outputsize: 1000 },
 };
 
+// Robust fetch mit Promise.race Timeout (zuverlässiger als AbortSignal.timeout auf Vercel)
+async function fetchWithTimeout(url, opts = {}, timeoutMs = 10000) {
+  return Promise.race([
+    fetch(url, opts),
+    new Promise((_, rej) => setTimeout(() => rej(new Error(`Timeout ${timeoutMs}ms: ${url.split('?')[0]}`)), timeoutMs))
+  ]);
+}
+
 // ── FX: USD → Zielwährung ─────────────────────────────────────
 async function usdRate(currency) {
   if (currency === 'USD') return 1;
   const FALLBACK = { CHF: 0.88, EUR: 0.92, GBP: 0.79 };
   try {
-    const r = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=USD',
-      { signal: AbortSignal.timeout(4000) });
+    const r = await fetchWithTimeout('https://api.coinbase.com/v2/exchange-rates?currency=USD', {}, 4000);
     if (!r.ok) throw new Error('fx failed');
     const d = await r.json();
     const v = parseFloat(d?.data?.rates?.[currency]);
@@ -85,10 +92,9 @@ async function fetchCrypto(symbol, range, currency) {
   const key  = process.env.COINGECKO_API_KEY;
   const url  = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(symbol)}/market_chart?vs_currency=${cur}&days=${days}`;
 
-  const r = await fetch(url, {
+  const r = await fetchWithTimeout(url, {
     headers: key ? { 'x-cg-demo-api-key': key } : {},
-    signal: AbortSignal.timeout(10000),
-  });
+  }, 10000);
   if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
 
   const d = await r.json();
@@ -128,7 +134,7 @@ async function fetchStockAlpha(symbol, range) {
   const cfg = ALPHA_CFG[range];
   const url = `https://www.alphavantage.co/query?function=${cfg.fn}&symbol=${encodeURIComponent(symbol)}&outputsize=${cfg.outputsize}&apikey=${key}`;
 
-  const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  const r = await fetchWithTimeout(url, {}, 12000);
   if (!r.ok) throw new Error(`Alpha Vantage HTTP ${r.status}`);
 
   const d = await r.json();
@@ -169,7 +175,7 @@ async function fetchStockTwelve(symbol, range) {
   const cfg = TD_CFG[range];
   const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=${cfg.interval}&outputsize=${cfg.outputsize}&apikey=${key}`;
 
-  const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  const r = await fetchWithTimeout(url, {}, 12000);
   if (!r.ok) throw new Error(`Twelve Data HTTP ${r.status}`);
 
   const d = await r.json();
