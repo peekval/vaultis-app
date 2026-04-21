@@ -31,7 +31,6 @@ async function fetchJson(url, options = {}) {
   return data;
 }
 
-// ── FX: USD → target ─────────────────────────────────────────
 async function usdRate(currency) {
   if (currency === 'USD') return 1;
 
@@ -46,7 +45,6 @@ async function usdRate(currency) {
   }
 }
 
-// ── CRYPTO — CoinGecko only ──────────────────────────────────
 async function cryptoQuote(id, currency) {
   const cur = currency.toLowerCase();
   const key = process.env.COINGECKO_API_KEY;
@@ -73,7 +71,6 @@ async function cryptoQuote(id, currency) {
   };
 }
 
-// ── STOCK / ETF — Finnhub primary, Yahoo fallback ────────────
 async function stockQuote(symbol, type, currency) {
   const finnKey = process.env.FINNHUB_API_KEY;
 
@@ -153,8 +150,7 @@ async function stockQuote(symbol, type, currency) {
   }
 }
 
-// ── METAL — metals.live ──────────────────────────────────────
-const METAL_KEY = {
+const METAL_SYMBOL_MAP = {
   gold: 'gold',
   silver: 'silver',
   platinum: 'platinum',
@@ -162,37 +158,75 @@ const METAL_KEY = {
 };
 
 async function metalQuote(id, currency) {
-  const key = METAL_KEY[String(id || '').toLowerCase()];
-  if (!key) return null;
+  const apiKey = process.env.METALS_DEV_API_KEY;
+  if (!apiKey) {
+    throw new Error('METALS_DEV_API_KEY fehlt');
+  }
+
+  const metal = METAL_SYMBOL_MAP[String(id || '').toLowerCase()];
+  if (!metal) return null;
 
   try {
-    const data = await fetchJson('https://api.metals.live/v1/spot');
-    if (!Array.isArray(data)) return null;
+    const d = await fetchJson(
+      `https://api.metals.dev/v1/metal/spot?api_key=${encodeURIComponent(apiKey)}&metal=${encodeURIComponent(metal)}&currency=${encodeURIComponent(currency)}&unit=toz`,
+      { headers: { Accept: 'application/json' } }
+    );
 
-    const spot = {};
-    for (const obj of data) Object.assign(spot, obj);
+    const price =
+      parseFloat(d?.spot_price) ||
+      parseFloat(d?.price) ||
+      parseFloat(d?.spot) ||
+      parseFloat(d?.rate);
 
-    const priceUsd = spot[key];
-    if (typeof priceUsd !== 'number' || priceUsd <= 0) return null;
+    const chg =
+      parseFloat(d?.change_percentage) ||
+      parseFloat(d?.change_percent) ||
+      parseFloat(d?.change_pct);
 
-    const rate = await usdRate(currency);
-
-    return {
-      symbol: id,
-      type: 'metal',
-      price: priceUsd * rate,
-      currency,
-      change24h: 0,
-      source: 'metals.live',
-      lastUpdated: Date.now(),
-    };
+    if (price > 0) {
+      return {
+        symbol: id,
+        type: 'metal',
+        price,
+        currency,
+        change24h: Number.isFinite(chg) ? chg : 0,
+        source: 'metals.dev/spot',
+        lastUpdated: Date.now(),
+      };
+    }
   } catch (e) {
-    console.warn('[metal] metals.live:', e.message);
-    return null;
+    console.warn('[metal] metals.dev spot:', e.message);
   }
+
+  try {
+    const d = await fetchJson(
+      `https://api.metals.dev/v1/latest?api_key=${encodeURIComponent(apiKey)}&currency=${encodeURIComponent(currency)}&unit=toz`,
+      { headers: { Accept: 'application/json' } }
+    );
+
+    const price =
+      parseFloat(d?.metals?.[metal]) ||
+      parseFloat(d?.[metal]) ||
+      parseFloat(d?.rates?.[metal]);
+
+    if (price > 0) {
+      return {
+        symbol: id,
+        type: 'metal',
+        price,
+        currency: String(d?.currency || currency || 'USD').toUpperCase(),
+        change24h: 0,
+        source: 'metals.dev/latest',
+        lastUpdated: Date.now(),
+      };
+    }
+  } catch (e) {
+    console.warn('[metal] metals.dev latest:', e.message);
+  }
+
+  return null;
 }
 
-// ── HANDLER ──────────────────────────────────────────────────
 export default async function handler(req, res) {
   try {
     setCors(res);
@@ -220,7 +254,10 @@ export default async function handler(req, res) {
     else result = await stockQuote(symbol, type, cur);
 
     if (!result) {
-      return res.status(404).json({ error: `Preis für ${symbol} nicht verfügbar` });
+      return res.status(404).json({
+        error: `Preis für ${symbol} nicht verfügbar`,
+        code: 'NO_PRICE_RESULT',
+      });
     }
 
     return res.status(200).json(result);
