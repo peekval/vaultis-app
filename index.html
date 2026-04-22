@@ -1344,36 +1344,62 @@ function apiUrl(path) {
   return (API || API_DEFAULT).replace(/\/$/, '') + path;
 }
 
-// Direkter Stock-Fallback vom Frontend via Yahoo Finance API
-// (öffentlich, kein API-Key nötig, CORS-freundlich über Proxy)
-async function fetchStockDirectYahoo(symbol, currency) {
-  // Yahoo's query1.finance.yahoo.com ist leider CORS-blocked vom Browser.
-  // Deshalb nutzen wir einen öffentlichen CORS-Proxy oder direkten FMP-Endpoint.
-  // Stooq.com ist eine gute Alternative — liefert CSV, CORS-erlaubt, kein Key.
+// Stock-Fallback via Yahoo Finance (über corsproxy.io — gratis, unbegrenzt)
+// Yahoo hat die zuverlässigste Stock-API, blockt aber direkten Browser-Aufruf.
+// corsproxy.io ist ein öffentlicher, gratis CORS-Relay.
+
+// ETFs haben oft Exchange-Suffixe bei Yahoo (.L = London, .DE = Xetra etc.)
+const FE_ETF_YAHOO_MAP = {
+  'VWRL': 'VWRL.L',       // Vanguard FTSE All-World — London
+  'VWCE': 'VWCE.DE',      // Xetra
+  'IWDA': 'IWDA.L',
+  'CSPX': 'CSPX.L',
+  'EQQQ': 'EQQQ.L',
+  'VUSA': 'VUSA.L',
+  'XDWD': 'XDWD.DE',
+  // US-ETFs brauchen keinen Suffix
+  'QQQ': 'QQQ',
+  'SPY': 'SPY',
+  'VTI': 'VTI',
+};
+
+function toYahooSymbol(symbol, type) {
+  if (type === 'etf') return FE_ETF_YAHOO_MAP[symbol.toUpperCase()] || symbol.toUpperCase();
+  return symbol.toUpperCase();
+}
+
+async function fetchStockDirectYahoo(symbol, currency, type) {
+  if (isProviderBlocked('yahoo')) return null;
   try {
-    // Stooq verlangt Symbol im lowercase mit .us suffix für US-Aktien
-    const stooqSym = symbol.toLowerCase() + '.us';
-    const url = `https://stooq.com/q/l/?s=${stooqSym}&f=sd2t2ohlcv&h&e=csv`;
+    const sym = toYahooSymbol(symbol, type || 'stock');
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=5d`;
+    const url = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
     const res = await Promise.race([
       fetch(url),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
     ]);
+    if (res && res.status === 429) { blockProvider('yahoo', 60 * 1000); return null; }
     if (!res || !res.ok) return null;
-    const text = await res.text();
-    // CSV Format: Symbol,Date,Time,Open,High,Low,Close,Volume
-    const lines = text.trim().split('\n');
-    if (lines.length < 2) return null;
-    const parts = lines[1].split(',');
-    const close = parseFloat(parts[6]);
-    const open = parseFloat(parts[3]);
-    if (!(close > 0)) return null;
-    const chg = open > 0 ? ((close - open) / open * 100) : 0;
-    const rate = (currency === 'CHF') ? 0.88 : (currency === 'EUR') ? 0.92 : 1;
+    const d = await res.json();
+    const result = d?.chart?.result?.[0];
+    if (!result) return null;
+    const meta = result.meta;
+    const price = meta?.regularMarketPrice;
+    const prevClose = meta?.chartPreviousClose || meta?.previousClose;
+    if (!(typeof price === 'number' && price > 0)) return null;
+    const chg = (prevClose > 0) ? ((price - prevClose) / prevClose * 100) : 0;
+    const metaCur = meta?.currency || 'USD';
+    const rate = (metaCur === currency) ? 1
+               : (metaCur === 'USD' && currency === 'CHF') ? 0.88
+               : (metaCur === 'USD' && currency === 'EUR') ? 0.92
+               : (metaCur === 'EUR' && currency === 'CHF') ? 0.96
+               : (metaCur === 'GBp' && currency === 'CHF') ? 0.011   // GBX = 1/100 GBP
+               : 1;
     return {
-      symbol, type: 'stock',
-      price: close * rate, currency: currency || cfg.cur,
+      symbol, type: type || 'stock',
+      price: price * rate, currency: currency || cfg.cur,
       change24h: chg,
-      source: 'stooq-direct',
+      source: 'yahoo-direct',
       lastUpdated: Date.now(),
     };
   } catch (e) {
@@ -1547,7 +1573,7 @@ async function fetchQuote(id, type) {
   // ── Schritt 3: Stock Fallback — Stooq direkt ──
   if ((type === 'stock' || type === 'etf') && (!data || !(typeof data.price === 'number' && data.price > 0))) {
     devWarn('[fetchQuote] Backend-Fehler für', id, '— versuche Stooq direkt');
-    data = await fetchStockDirectYahoo(id, cfg.cur);
+    data = await fetchStockDirectYahoo(id, cfg.cur, type);
   }
 
   if (data && typeof data.price === 'number' && data.price > 0) {
@@ -1586,48 +1612,60 @@ function histCacheSet(id, type, range, cur, data) {
   } catch {}
 }
 
-// Direkter Stock-History-Fallback via Stooq
-async function fetchHistDirectStooq(symbol, range, currency) {
+// Stock-History-Fallback via Yahoo Finance (corsproxy.io)
+async function fetchHistDirectStooq(symbol, range, currency, type) {
+  if (isProviderBlocked('yahoo')) return null;
   try {
-    const stooqSym = symbol.toLowerCase() + '.us';
-    // Stooq liefert tägliche Daten als CSV
-    const url = `https://stooq.com/q/d/l/?s=${stooqSym}&i=d`;
+    const sym = toYahooSymbol(symbol, type || 'stock');
+    const rangeMap = { '7d': '5d', '1m': '1mo', '6m': '6mo', '1y': '1y', 'all': '5y' };
+    const intervalMap = { '7d': '1h', '1m': '1d', '6m': '1d', '1y': '1d', 'all': '1wk' };
+    const yRange = rangeMap[range] || '1mo';
+    const yInt = intervalMap[range] || '1d';
+
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=${yInt}&range=${yRange}`;
+    const url = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
     const res = await Promise.race([
       fetch(url),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000))
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 12000))
     ]);
+    if (res && res.status === 429) { blockProvider('yahoo', 60 * 1000); return null; }
     if (!res || !res.ok) return null;
-    const text = await res.text();
-    // CSV: Date,Open,High,Low,Close,Volume
-    const lines = text.trim().split('\n');
-    if (lines.length < 3) return null;
+    const d = await res.json();
+    const result = d?.chart?.result?.[0];
+    if (!result) return null;
 
-    const daysMap = { '7d': 7, '1m': 30, '6m': 180, '1y': 365, 'all': 1825 };
-    const limit = daysMap[range] || 30;
+    const timestamps = result.timestamp || [];
+    const closes = result.indicators?.quote?.[0]?.close || [];
+    if (timestamps.length < 2 || closes.length < 2) return null;
 
-    // Skip header, take last N lines
-    const dataLines = lines.slice(1);
-    const sliced = dataLines.slice(-limit);
+    const metaCur = result.meta?.currency || 'USD';
+    const rate = (metaCur === currency) ? 1
+               : (metaCur === 'USD' && currency === 'CHF') ? 0.88
+               : (metaCur === 'USD' && currency === 'EUR') ? 0.92
+               : (metaCur === 'EUR' && currency === 'CHF') ? 0.96
+               : (metaCur === 'GBp' && currency === 'CHF') ? 0.011
+               : 1;
 
-    const rate = (currency === 'CHF') ? 0.88 : (currency === 'EUR') ? 0.92 : 1;
-    const points = sliced.map(line => {
-      const parts = line.split(',');
-      return {
-        date: parts[0],   // YYYY-MM-DD
-        price: parseFloat(parts[4]) * rate,
-      };
-    }).filter(p => p.price > 0);
-
+    const points = [];
+    for (let i = 0; i < timestamps.length; i++) {
+      const c = closes[i];
+      if (typeof c === 'number' && c > 0) {
+        points.push({
+          date: new Date(timestamps[i] * 1000).toISOString(),
+          price: c * rate,
+        });
+      }
+    }
     if (points.length < 2) return null;
 
     return {
-      symbol, type: 'stock', range,
-      source: 'stooq-direct',
+      symbol, type: type || 'stock', range,
+      source: 'yahoo-direct',
       currency: currency || cfg.cur,
       points,
     };
   } catch (e) {
-    devWarn('[fetchHistDirectStooq]', e.message);
+    devWarn('[fetchHistDirectYahoo]', e.message);
     return null;
   }
 }
@@ -1682,7 +1720,7 @@ async function fetchHist(id, type, range) {
   }
   if ((type === 'stock' || type === 'etf') && (!data || !Array.isArray(data.points) || data.points.length < 2)) {
     devWarn('[fetchHist] Backend-Fehler für', id, '— versuche Stooq direkt');
-    data = await fetchHistDirectStooq(id, range, cfg.cur);
+    data = await fetchHistDirectStooq(id, range, cfg.cur, type);
   }
 
   // 4) Erfolgreich → cachen
@@ -2435,11 +2473,7 @@ async function loadDetChart(a, type, range) {
       if (ldE) ldE.innerHTML = 'ℹ Historische Daten aktuell nicht verfügbar.';
       return;
     }
-    if (type === 'etf') {
-      const ldE = $('dc-load');
-      if (ldE) ldE.innerHTML = 'ℹ ETF-Historie aktuell nicht verfügbar.';
-      return;
-    }
+    // ETFs werden nicht mehr geskippt — Yahoo Finance Fallback kann sie liefern
 
     const data = await fetchHist(a.id, type, range);
     const ldE = $('dc-load'), cvE = $('dc-canvas'), smE = $('dc-sum');
