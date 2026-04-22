@@ -625,6 +625,86 @@ html, body {
 .gr { font-size: 24px; font-weight: 600; margin-bottom: 3px; letter-spacing: -0.035em; color: var(--text); }
 .grs { font-size: 13px; color: var(--text-3); margin-bottom: 22px; font-weight: 400; }
 
+/* ── Portfolio Score Card ──────────────────────────────── */
+.score-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 22px;
+  margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: var(--shadow-xs);
+}
+.score-card:hover { border-color: var(--border-2); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.score-card:active { transform: scale(0.99); }
+.score-left { flex: 1; }
+.score-lbl {
+  font-size: 11px; color: var(--text-3); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+}
+.score-val {
+  font-size: 36px; font-weight: 600; letter-spacing: -1.5px;
+  color: var(--text); font-feature-settings: 'tnum'; line-height: 1;
+}
+.score-grade {
+  display: inline-block; margin-top: 6px;
+  font-size: 12px; font-weight: 600; color: var(--text-2);
+  background: var(--surface-2);
+  padding: 2px 8px; border-radius: var(--r-pill);
+}
+.score-grade.g-a  { background: rgba(4,120,87,0.08);  color: var(--pos); }
+.score-grade.g-b  { background: rgba(26,26,46,0.06);  color: var(--text); }
+.score-grade.g-c  { background: rgba(161,98,7,0.08);  color: var(--warn); }
+.score-grade.g-d  { background: rgba(190,18,60,0.08); color: var(--neg); }
+.score-right { display: flex; align-items: center; gap: 12px; }
+.score-ring { width: 56px; height: 56px; }
+.score-svg { transform: rotate(-90deg); }
+.score-bg { fill: none; stroke: var(--surface-3); stroke-width: 3; }
+.score-fill {
+  fill: none; stroke: var(--text); stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.9s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s;
+}
+.score-fill.f-a { stroke: var(--pos); }
+.score-fill.f-c { stroke: var(--warn); }
+.score-fill.f-d { stroke: var(--neg); }
+.score-arrow { font-size: 16px; color: var(--text-3); }
+
+/* Score Detail Modal */
+.score-breakdown { margin-bottom: 18px; }
+.score-bar-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--divider);
+}
+.score-bar-row:last-child { border-bottom: none; }
+.score-bar-lbl { flex: 1; font-size: 13px; font-weight: 500; color: var(--text); }
+.score-bar-track { width: 80px; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.score-bar-fill { height: 100%; background: var(--text); border-radius: 3px; transition: width .6s ease; }
+.score-bar-fill.ok { background: var(--pos); }
+.score-bar-fill.med { background: var(--warn); }
+.score-bar-fill.bad { background: var(--neg); }
+.score-bar-num { font-size: 12px; font-weight: 600; color: var(--text-2); font-feature-settings: 'tnum'; min-width: 42px; text-align: right; }
+
+.score-insight {
+  padding: 10px 14px; border-radius: var(--rs);
+  font-size: 12.5px; line-height: 1.5; margin-bottom: 8px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.score-insight.info { background: var(--surface-2); color: var(--text-2); border-left: 3px solid var(--text-3); }
+.score-insight.warn { background: var(--warn-soft); color: var(--warn); border-left: 3px solid var(--warn); }
+.score-insight-ico { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+.score-locked {
+  background: linear-gradient(135deg, var(--brand-soft), var(--surface-2));
+  border: 1px dashed var(--border-2);
+  padding: 16px; border-radius: var(--rs);
+  text-align: center; margin-top: 12px;
+}
+.score-locked-ttl { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.score-locked-sub { font-size: 12px; color: var(--text-3); margin-bottom: 10px; }
+
 .sort-bar { display: flex; gap: 4px; overflow-x: auto; margin-bottom: 14px; scrollbar-width: none; padding-bottom: 4px; }
 .sort-bar::-webkit-scrollbar { display: none; }
 .sort-btn {
@@ -760,6 +840,24 @@ html, body {
   </div>
 
   <div id="home-banner"></div>
+
+  <!-- Portfolio Score Card -->
+  <div class="score-card" id="score-card" style="display:none" onclick="openScoreDetail()">
+    <div class="score-left">
+      <div class="score-lbl">Portfolio Score</div>
+      <div class="score-val" id="score-val">—</div>
+      <div class="score-grade" id="score-grade">—</div>
+    </div>
+    <div class="score-right">
+      <div class="score-ring">
+        <svg viewBox="0 0 36 36" class="score-svg">
+          <path class="score-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          <path class="score-fill" id="score-fill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+        </svg>
+      </div>
+      <div class="score-arrow">→</div>
+    </div>
+  </div>
 
   <!-- Mini Stats -->
   <div class="mini-grid" id="mini-stats" style="display:none">
@@ -1810,6 +1908,103 @@ function totals(positions) {
 }
 
 // ============================================================
+// PORTFOLIO SCORE — die Nordstern-Metrik der App
+// Bewertet Portfolio 0-100 basierend auf Diversifikation,
+// Risiko, Home-Bias und Asset-Allocation.
+// ============================================================
+function calcPortfolioScore(positions) {
+  if (!positions.length) {
+    return { score: 0, grade: '—', breakdown: [], insights: [] };
+  }
+  const totalVal = positions.reduce((s, p) => s + num(p.curVal), 0);
+  if (totalVal <= 0) return { score: 0, grade: '—', breakdown: [], insights: [] };
+
+  const breakdown = [];
+  const insights = [];
+
+  // ── 1. DIVERSIFIKATION (max 25 Punkte) ──
+  // Anzahl Positionen: 1-3 = 5, 4-7 = 15, 8-15 = 22, 16+ = 25
+  let divScore = 0;
+  if (positions.length >= 16) divScore = 25;
+  else if (positions.length >= 8) divScore = 22;
+  else if (positions.length >= 4) divScore = 15;
+  else divScore = positions.length * 3;
+  breakdown.push({ label: 'Diversifikation', score: divScore, max: 25 });
+  if (positions.length < 5) insights.push({ type: 'warn', text: `Nur ${positions.length} Position${positions.length!==1?'en':''} — erhöhe auf 8+ für bessere Risikostreuung.` });
+
+  // ── 2. KONZENTRATIONSRISIKO (max 25 Punkte) ──
+  // Größte Position sollte <20% sein
+  const shares = positions.map(p => num(p.curVal) / totalVal);
+  const maxShare = Math.max(...shares);
+  let concScore = 0;
+  if (maxShare < 0.15) concScore = 25;
+  else if (maxShare < 0.25) concScore = 20;
+  else if (maxShare < 0.40) concScore = 12;
+  else if (maxShare < 0.60) concScore = 5;
+  else concScore = 0;
+  breakdown.push({ label: 'Konzentration', score: concScore, max: 25 });
+  if (maxShare > 0.30) {
+    const topPos = positions.find(p => (num(p.curVal) / totalVal) === maxShare);
+    insights.push({ type: 'warn', text: `${topPos?.asset.sym || 'Top-Position'} macht ${(maxShare*100).toFixed(0)}% deines Portfolios aus — hohe Einzelrisiko-Exposition.` });
+  }
+
+  // ── 3. ASSET-KLASSEN-MIX (max 25 Punkte) ──
+  // Gesunde Mischung: Aktien + ETFs + Crypto + Metall
+  const byType = {};
+  positions.forEach(p => {
+    byType[p.type] = (byType[p.type] || 0) + num(p.curVal);
+  });
+  const types = Object.keys(byType);
+  const typeShares = types.map(t => byType[t] / totalVal);
+
+  let mixScore = 0;
+  if (types.length >= 3) mixScore = 20;
+  else if (types.length === 2) mixScore = 12;
+  else mixScore = 4;
+
+  // Bonus: Crypto <15% (nicht zu riskant)
+  const cryptoShare = (byType.crypto || 0) / totalVal;
+  if (cryptoShare <= 0.15) mixScore += 5;
+  else if (cryptoShare <= 0.30) mixScore += 2;
+
+  mixScore = Math.min(25, mixScore);
+  breakdown.push({ label: 'Asset-Mix', score: mixScore, max: 25 });
+  if (cryptoShare > 0.30) insights.push({ type: 'warn', text: `Krypto-Anteil ${(cryptoShare*100).toFixed(0)}% — sehr hoch für ein Langfrist-Portfolio.` });
+  if (types.length < 2) insights.push({ type: 'info', text: 'Füge eine zweite Asset-Klasse hinzu (ETF oder Crypto) für bessere Stabilität.' });
+
+  // ── 4. ETF/PASSIVE ANTEIL (max 15 Punkte) ──
+  // Gesunde Portfolios haben 40-70% in ETFs
+  const etfShare = (byType.etf || 0) / totalVal;
+  let etfScore = 0;
+  if (etfShare >= 0.40 && etfShare <= 0.80) etfScore = 15;
+  else if (etfShare >= 0.20) etfScore = 10;
+  else if (etfShare > 0) etfScore = 5;
+  else etfScore = 0;
+  breakdown.push({ label: 'ETF-Basis', score: etfScore, max: 15 });
+  if (etfShare < 0.20) insights.push({ type: 'info', text: 'Ein ETF-Kern (40-60%) reduziert Risiko und Zeitaufwand.' });
+
+  // ── 5. DATENQUALITÄT (max 10 Punkte) ──
+  // Wie viel Prozent der Werte haben Live-Preise?
+  const livePct = positions.filter(p => p.src && p.src !== 'missing' && p.src !== 'avgbuy').length / positions.length;
+  const dataScore = Math.round(livePct * 10);
+  breakdown.push({ label: 'Datenqualität', score: dataScore, max: 10 });
+
+  const totalScore = divScore + concScore + mixScore + etfScore + dataScore;
+
+  // Grade-Mapping
+  let grade = 'F';
+  if (totalScore >= 90) grade = 'A+';
+  else if (totalScore >= 80) grade = 'A';
+  else if (totalScore >= 70) grade = 'B+';
+  else if (totalScore >= 60) grade = 'B';
+  else if (totalScore >= 50) grade = 'C+';
+  else if (totalScore >= 40) grade = 'C';
+  else if (totalScore >= 30) grade = 'D';
+
+  return { score: totalScore, grade, breakdown, insights };
+}
+
+// ============================================================
 // REFRESH
 // ============================================================
 /**
@@ -2091,6 +2286,9 @@ function renderHome() {
 
     renderHeroChart(pos);
 
+    // ── Portfolio Score ──
+    renderScoreCard(pos);
+
     const bE = $('home-banner');
     if (bE) {
       if (pos.length && t.miss > 0) {
@@ -2140,6 +2338,81 @@ function renderHome() {
       setTimeout(() => hydratePositions(pos), 100);
     }
   } catch(e) { devWarn('[renderHome]', e.message); }
+}
+
+// ─── Score Card Rendering ─────────────────────────────────
+function renderScoreCard(positions) {
+  const card = $('score-card');
+  if (!card) return;
+  if (!positions.length) { card.style.display = 'none'; return; }
+
+  const { score, grade } = calcPortfolioScore(positions);
+  card.style.display = 'flex';
+
+  // Score-Wert mit Count-up
+  countUp('score-val', score, 0);
+
+  // Grade
+  const gradeE = $('score-grade');
+  if (gradeE) {
+    gradeE.textContent = grade;
+    gradeE.className = 'score-grade ' + (
+      grade.startsWith('A') ? 'g-a' :
+      grade.startsWith('B') ? 'g-b' :
+      grade.startsWith('C') ? 'g-c' : 'g-d'
+    );
+  }
+
+  // Ring
+  const fillE = $('score-fill');
+  if (fillE) {
+    const pct = Math.max(0, Math.min(100, score));
+    fillE.setAttribute('stroke-dasharray', `${pct}, 100`);
+    fillE.className = 'score-fill ' + (
+      score >= 70 ? 'f-a' :
+      score >= 50 ? '' :
+      score >= 30 ? 'f-c' : 'f-d'
+    );
+  }
+}
+
+function openScoreDetail() {
+  const pos = getPositions();
+  if (!pos.length) return;
+  const { score, grade, breakdown, insights } = calcPortfolioScore(pos);
+
+  const barHtml = breakdown.map(b => {
+    const pct = (b.score / b.max) * 100;
+    const cls = pct >= 80 ? 'ok' : pct >= 50 ? 'med' : 'bad';
+    return `<div class="score-bar-row">
+      <div class="score-bar-lbl">${b.label}</div>
+      <div class="score-bar-track"><div class="score-bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="score-bar-num">${b.score}/${b.max}</div>
+    </div>`;
+  }).join('');
+
+  const insightsHtml = insights.length
+    ? insights.map(i => `<div class="score-insight ${i.type}"><span class="score-insight-ico">${i.type==='warn'?'⚠':'ℹ'}</span><span>${i.text}</span></div>`).join('')
+    : `<div class="score-insight info"><span class="score-insight-ico">✓</span><span>Dein Portfolio sieht solide aus — keine akuten Schwächen erkannt.</span></div>`;
+
+  openM(`<div class="mh"></div>
+    <div class="mt">Portfolio Score · ${score}/100</div>
+    <p style="text-align:center;font-size:13px;color:var(--text-2);margin:-10px 0 22px;font-weight:500">
+      Grade: <strong>${grade}</strong>
+      ${score >= 70 ? ' · Gut diversifiziert' : score >= 50 ? ' · Verbesserungspotential' : ' · Hohe Konzentration'}
+    </p>
+    <div class="card-title" style="margin-bottom:8px">Bewertung</div>
+    <div class="score-breakdown">${barHtml}</div>
+    <div class="card-title" style="margin-bottom:8px">Erkenntnisse</div>
+    ${insightsHtml}
+    <div class="score-locked">
+      <div class="score-locked-ttl">🔒 Score-Historie · Vaultis Pro</div>
+      <div class="score-locked-sub">Verfolge wie sich dein Score über Zeit entwickelt und erhalte konkrete Verbesserungs-Vorschläge.</div>
+      <button class="btn btn-sm btn-p" onclick="toast('Pro kommt bald','');closeM()">Mehr erfahren</button>
+    </div>
+    <div style="height:16px"></div>
+    <button class="btn btn-g" onclick="closeM()">Schliessen</button>
+  `);
 }
 
 async function hydratePositions(positions) {
