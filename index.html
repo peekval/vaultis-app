@@ -1382,33 +1382,93 @@ async function fetchStockDirectYahoo(symbol, currency) {
   }
 }
 
-// Direkter CoinGecko-Fallback vom Frontend (kein Backend nötig).
-// CoinGecko erlaubt direkten Browser-Aufruf via CORS.
-// Wird nur genutzt wenn das eigene Backend versagt.
+// ── Rate-Limit Tracker ──
+// Wenn ein Provider 429 zurückgibt, wird er für X Sekunden komplett gesperrt.
+// So hämmern wir nicht weiter rein und geben dem Provider Zeit.
+const _providerBlocked = new Map();   // provider → unblockAt (timestamp)
+function isProviderBlocked(provider) {
+  const until = _providerBlocked.get(provider);
+  if (!until) return false;
+  if (Date.now() > until) { _providerBlocked.delete(provider); return false; }
+  return true;
+}
+function blockProvider(provider, ms) {
+  _providerBlocked.set(provider, Date.now() + ms);
+  devWarn(`[rate-limit] ${provider} blockiert für ${Math.round(ms/1000)}s`);
+}
+
+// ── Batch-Cache für CoinGecko ──
+// Sammelt Anfragen innerhalb von 50ms und macht EINEN Call für alle IDs.
+// Massive Reduzierung von Requests: 40 Crypto → 1 Call statt 40.
+const _cgBatchQueue = new Map();   // id → [resolveCallbacks]
+let _cgBatchTimer = null;
+
 async function fetchQuoteDirectCG(id, currency) {
-  try {
-    const cur = (currency || cfg.cur).toLowerCase();
-    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=${cur},usd&include_24hr_change=true`;
-    const res = await Promise.race([
-      fetch(url),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
-    ]);
-    if (!res || !res.ok) return null;
-    const d = await res.json();
-    const entry = d[id];
-    if (!entry) return null;
-    const price = entry[cur] ?? entry.usd;
-    if (typeof price !== 'number' || price <= 0) return null;
-    return {
-      symbol: id, type: 'crypto',
-      price, currency: currency || cfg.cur,
-      change24h: entry[`${cur}_24h_change`] ?? entry.usd_24h_change ?? 0,
-      source: 'coingecko-direct',
-      lastUpdated: Date.now(),
-    };
-  } catch (e) {
-    devWarn('[fetchQuoteDirectCG]', e.message);
-    return null;
+  if (isProviderBlocked('coingecko')) return null;
+  return new Promise(resolve => {
+    if (!_cgBatchQueue.has(id)) _cgBatchQueue.set(id, []);
+    _cgBatchQueue.get(id).push(resolve);
+
+    if (!_cgBatchTimer) {
+      _cgBatchTimer = setTimeout(() => processCGBatch(currency), 80);
+    }
+  });
+}
+
+async function processCGBatch(currency) {
+  _cgBatchTimer = null;
+  const batch = new Map(_cgBatchQueue);
+  _cgBatchQueue.clear();
+
+  if (!batch.size) return;
+
+  const ids = Array.from(batch.keys());
+  const cur = (currency || cfg.cur).toLowerCase();
+
+  // Max 250 IDs pro Request bei CoinGecko
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
+
+  for (const chunk of chunks) {
+    try {
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${chunk.map(encodeURIComponent).join(',')}&vs_currencies=${cur},usd&include_24hr_change=true`;
+      const res = await Promise.race([
+        fetch(url),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 10000))
+      ]);
+
+      if (res.status === 429) {
+        blockProvider('coingecko', 90 * 1000);   // 90s Pause
+        chunk.forEach(id => { (batch.get(id) || []).forEach(r => r(null)); });
+        continue;
+      }
+      if (!res || !res.ok) {
+        chunk.forEach(id => { (batch.get(id) || []).forEach(r => r(null)); });
+        continue;
+      }
+
+      const d = await res.json();
+      chunk.forEach(id => {
+        const entry = d[id];
+        let result = null;
+        if (entry) {
+          const price = entry[cur] ?? entry.usd;
+          if (typeof price === 'number' && price > 0) {
+            result = {
+              symbol: id, type: 'crypto',
+              price, currency: currency || cfg.cur,
+              change24h: entry[`${cur}_24h_change`] ?? entry.usd_24h_change ?? 0,
+              source: 'coingecko-direct',
+              lastUpdated: Date.now(),
+            };
+          }
+        }
+        (batch.get(id) || []).forEach(r => r(result));
+      });
+    } catch (e) {
+      devWarn('[processCGBatch]', e.message);
+      chunk.forEach(id => { (batch.get(id) || []).forEach(r => r(null)); });
+    }
   }
 }
 
@@ -1435,6 +1495,7 @@ const FE_BINANCE_MAP = {
 };
 
 async function fetchQuoteDirectBinance(id, currency) {
+  if (isProviderBlocked('binance')) return null;
   const binSym = FE_BINANCE_MAP[id.toLowerCase()];
   if (!binSym) return null;
   try {
@@ -1442,12 +1503,13 @@ async function fetchQuoteDirectBinance(id, currency) {
       fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${binSym}`),
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
     ]);
+    if (res && res.status === 429) { blockProvider('binance', 60 * 1000); return null; }
+    if (res && res.status === 418) { blockProvider('binance', 120 * 1000); return null; }
     if (!res || !res.ok) return null;
     const d = await res.json();
     const priceUsd = parseFloat(d.lastPrice);
     const chg = parseFloat(d.priceChangePercent);
     if (!(priceUsd > 0)) return null;
-    // USD → Zielwährung grob umrechnen (hartcoded; gut genug für Fallback)
     const rate = (currency === 'CHF') ? 0.88 : (currency === 'EUR') ? 0.92 : 1;
     return {
       symbol: id, type: 'crypto',
@@ -2862,7 +2924,7 @@ function renderMarkets() {
     ).join('');
     if (!window.__mkPrefetching) {
       window.__mkPrefetching = true;
-      setTimeout(() => prefetchVisible(list.slice(0, 25)).finally(() => { window.__mkPrefetching = false; }), 50);
+      setTimeout(() => prefetchVisible(list.slice(0, 15)).finally(() => { window.__mkPrefetching = false; }), 50);
     }
   } catch(e) { devWarn('[renderMarkets]', e.message); }
 }
@@ -2883,10 +2945,11 @@ function clearFailed(id) { _failedFetches.delete(id); }
 
 async function prefetchVisible(assets) {
   // Nur Assets ohne frischen Cache und ohne recent failure anfragen
+  // Cache-TTL auf 5 Minuten erhöht (vorher 60s) → deutlich weniger API-Calls
   const tasks = assets.filter(a => {
     if (manualPrices[a.id]) return false;
     const cached = pCache[a.id];
-    if (cached && (Date.now() - (cached.at || 0)) < 60000) return false;
+    if (cached && (Date.now() - (cached.at || 0)) < 5 * 60 * 1000) return false;
     if (isFailedRecently(a.id)) return false;
     return true;
   });
@@ -2894,7 +2957,7 @@ async function prefetchVisible(assets) {
 
   let doneCount = 0;
 
-  // Parallel mit Pool — 4 gleichzeitig. Nach jedem 5. Erfolg progressiv re-rendern.
+  // Parallel mit Pool — 2 gleichzeitig (vorher 4). Gentler auf Rate-Limits.
   await runInPool(tasks, async (a) => {
     const r = await fetchQuote(a.id, a.type);
     if (r) {
@@ -2906,7 +2969,7 @@ async function prefetchVisible(assets) {
     } else {
       markFailed(a.id);
     }
-  }, 4);
+  }, 2);
 
   if (curS === 'markets') rerenderMarketsList();
 }
